@@ -72,10 +72,16 @@ variable "devops_aya_pub_key" {
   type        = string
 }
 
-variable "terraform_bot_pub_key" {
+variable "terraform_boot_pub_key" {
   description = "Terraform bot SSH public key (content)"
   type        = string
 }
+
+variable "ansible_boot_pub_key" {
+  description = "Ansible Boot SSH public key (content)"
+  type        = string
+}
+
 variable "network_name" {
   description = "Nom du réseau sur lequel créer la VM"
   type        = string

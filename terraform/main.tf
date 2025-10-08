@@ -67,7 +67,8 @@ data "template_file" "cloudinit" {
   vars = {
     sysadmin_public_key      = var.sysadmin_pub_key
     devops_aya_public_key    = var.devops_aya_pub_key
-    terraform_bot_public_key = var.terraform_bot_pub_key
+    terraform_boot_public_key = var.terraform_boot_pub_key
+    ansible_boot_public_key  = var.ansible_boot_pub_key
   }
 }
 

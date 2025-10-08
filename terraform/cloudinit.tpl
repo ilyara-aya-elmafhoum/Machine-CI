@@ -17,12 +17,12 @@ users:
     ssh_authorized_keys:
       - ${devops_aya_public_key}
 
-  - name: terraform-bot
+  - name: terraform-boot
     groups: sudo
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
     ssh_authorized_keys:
-      - ${terraform_bot_public_key}
+      - ${terraform_boot_public_key}
 
   - name: ansible-boot
     groups: sudo
