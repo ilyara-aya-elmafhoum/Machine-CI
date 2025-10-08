@@ -2,14 +2,19 @@ terraform {
   required_providers {
     openstack = {
       source  = "terraform-provider-openstack/openstack"
-      version = "~> 2.0"
+      version = "~> 1.54.0"
     }
   }
-  required_version = ">= 1.3.0"
+  required_version = ">= 1.6.0"
 }
 
 provider "openstack" {
-  cloud = var.cloud_name
+  user_name        = var.OS_USERNAME
+  password         = var.OS_PASSWORD
+  auth_url         = var.OS_AUTH_URL
+  tenant_id        = var.OS_PROJECT_ID
+  user_domain_name = "Default"
+  region           = "dc3-a"
 }
 
 # 🔹 Groupe de sécurité
@@ -18,6 +23,7 @@ resource "openstack_networking_secgroup_v2" "ci_sg" {
   description = "Sécurité pour machine CI/CD"
 }
 
+# Règles d’accès
 resource "openstack_networking_secgroup_rule_v2" "allow_http" {
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -55,25 +61,24 @@ resource "openstack_networking_secgroup_rule_v2" "allow_ssh" {
   security_group_id = openstack_networking_secgroup_v2.ci_sg.id
 }
 
-# 🔹 Générer le cloud-init
+# 🔹 Générer le cloud-init à partir du template
 data "template_file" "cloudinit" {
   template = file("${path.module}/cloudinit.tpl")
   vars = {
-    sysadmin_public_key      = file(var.sysadmin_key_path)
-    devops_aya_public_key    = file(var.devops_aya_key_path)
-    terraform_bot_public_key = file(var.terraform_bot_key_path)
-    ansible_boot_public_key  = file(var.ansible_boot_key_path)
-    admin_cidr               = var.admin_cidr
+    sysadmin_public_key      = var.sysadmin_pub_key
+    devops_aya_public_key    = var.devops_aya_pub_key
+    terraform_bot_public_key = var.terraform_bot_pub_key
   }
 }
 
-# 🔹 Créer la machine CI
+# 🔹 Création de la machine CI
 resource "openstack_compute_instance_v2" "machine_ci" {
   name            = "machine-CI"
-  image_name      = var.image_name
-  flavor_name     = var.flavor_name
-  key_pair        = var.key_pair
+  image_name      = var.vm_image
+  flavor_name     = var.vm_flavor
+  key_pair        = var.ssh_key_name
   security_groups = [openstack_networking_secgroup_v2.ci_sg.name]
+
   network {
     name = var.network_name
   }
