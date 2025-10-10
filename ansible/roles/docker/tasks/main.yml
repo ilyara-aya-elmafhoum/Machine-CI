@@ -1,0 +1,32 @@
+---
+- name: Supprimer le dépôt Docker obsolète
+  file:
+    path: /etc/apt/sources.list.d/docker.list
+    state: absent
+
+- name: Installer dépendances de base
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+    update_cache: yes
+
+- name: Installer Docker via script officiel
+  ansible.builtin.shell: |
+    curl -fsSL https://get.docker.com -o get-docker.sh
+    sh get-docker.sh
+  args:
+    creates: /usr/bin/docker
+
+- name: Vérifier Docker
+  command: docker --version
+
+- name: Activer et démarrer Docker
+  systemd:
+    name: docker
+    enabled: yes
+    state: started
