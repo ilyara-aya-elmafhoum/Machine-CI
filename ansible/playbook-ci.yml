@@ -3,7 +3,7 @@
   become: yes
   vars:
     github_repo: "ilyara-aya-elmafhoum/Pipline-CI"
-    github_token: github_token: "{{ lookup('env', 'GITHUB_TOKEN') }}"   
+    github_token: "{{ lookup('env', 'GITHUB_TOKEN') }}"   
   roles:
     - docker
     - sonarqube
