@@ -82,8 +82,8 @@ resource "openstack_compute_instance_v2" "machine_ci" {
   security_groups = [openstack_networking_secgroup_v2.ci_sg.name]
 
   network {
-    name     = var.network_name       # ex: private-net
-    fixed_ip = var.machine_ci_private_ip  # IP privée fixe
+    name     = var.network_name       
+    fixed_ip_v4 = var.machine_ci_private_ip  
   }
 
   user_data = data.template_file.cloudinit.rendered
