@@ -17,13 +17,12 @@ provider "openstack" {
   region           = "dc3-a"
 }
 
-#  Groupe de sécurité
+# Security Group
 resource "openstack_networking_secgroup_v2" "ci_sg" {
   name        = "machine-ci-sg"
   description = "Sécurité pour machine CI/CD"
 }
 
-# Règles d’accès
 resource "openstack_networking_secgroup_rule_v2" "allow_http" {
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -61,41 +60,51 @@ resource "openstack_networking_secgroup_rule_v2" "allow_ssh" {
   security_group_id = openstack_networking_secgroup_v2.ci_sg.id
 }
 
-#  Générer le cloud-init à partir du template
+# Cloud-init
 data "template_file" "cloudinit" {
   template = file("${path.module}/cloudinit.tpl")
   vars = {
-    sysadmin_public_key      = var.sysadmin_pub_key
-    devops_aya_public_key    = var.devops_aya_pub_key
+    sysadmin_public_key       = var.sysadmin_pub_key
+    devops_aya_public_key     = var.devops_aya_pub_key
     terraform_boot_public_key = var.terraform_boot_pub_key
-    ansible_boot_public_key  = var.ansible_boot_pub_key
-    admin_cidr               = var.admin_cidr
+    ansible_boot_public_key   = var.ansible_boot_pub_key
+    admin_cidr                = var.admin_cidr
   }
 }
 
-#  Création de la machine CI
+# Private Port
+resource "openstack_networking_port_v2" "ci_port" {
+  name       = "ci-port"
+  network_id = var.network_id
+
+  fixed_ip {
+    subnet_id  = var.subnet_id
+    ip_address = var.machine_ci_private_ip
+  }
+}
+
+# Compute Instance
 resource "openstack_compute_instance_v2" "machine_ci" {
-  name            = "machine-CI"
-  image_name      = var.vm_image
-  flavor_name     = var.vm_flavor
-  key_pair        = var.ssh_key_name
-  security_groups = [openstack_networking_secgroup_v2.ci_sg.name]
+  name        = "machine-CI"
+  image_name  = var.vm_image
+  flavor_name = var.vm_flavor
+  key_pair    = var.ssh_key_name
 
   network {
-    name     = var.network_name       
-    fixed_ip_v4 = var.machine_ci_private_ip  
+    port = openstack_networking_port_v2.ci_port.id
   }
 
-  user_data = data.template_file.cloudinit.rendered
+  security_groups = [openstack_networking_secgroup_v2.ci_sg.name]
+  user_data       = data.template_file.cloudinit.rendered
 }
 
-#  Adresse IP flottante publique
-resource "openstack_networking_floatingip_v2" "ci_floating_ip" {
-  pool = var.floating_ip_pool
+# Floating IP
+resource "openstack_networking_floatingip_v2" "ci_fip" {
+  pool    = var.floating_ip_pool
+  port_id = openstack_networking_port_v2.ci_port.id
 }
 
-resource "openstack_networking_floatingip_associate_v2" "ci_fip_assoc" {
-  floating_ip = openstack_networking_floatingip_v2.ci_floating_ip.address
-  port_id     = openstack_compute_instance_v2.machine_ci.network[0].port
+# Output
+output "ci_ip" {
+  value = openstack_networking_floatingip_v2.ci_fip.address
 }
-
