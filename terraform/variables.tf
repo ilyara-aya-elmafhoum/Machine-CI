@@ -92,3 +92,14 @@ variable "machine_ci_private_ip" {
   description = "Adresse IP privée fixe pour la machine CI"
   type        = string
 }
+variable "network_id" {
+  description = "ID du réseau privé utilisé par la machine CI"
+  type        = string
+  
+}
+
+variable "subnet_id" {
+  description = "ID du sous-réseau privé utilisé par la machine CI"
+  type        = string
+  
+}
