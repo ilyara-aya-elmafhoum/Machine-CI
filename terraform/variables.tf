@@ -85,5 +85,6 @@ variable "ansible_boot_pub_key" {
 variable "network_name" {
   description = "Nom du réseau sur lequel créer la VM"
   type        = string
-
+  default     = "10.0.0.11"
+  
 }

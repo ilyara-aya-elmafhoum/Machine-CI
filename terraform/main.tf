@@ -17,7 +17,7 @@ provider "openstack" {
   region           = "dc3-a"
 }
 
-# 🔹 Groupe de sécurité
+#  Groupe de sécurité
 resource "openstack_networking_secgroup_v2" "ci_sg" {
   name        = "machine-ci-sg"
   description = "Sécurité pour machine CI/CD"
@@ -61,7 +61,7 @@ resource "openstack_networking_secgroup_rule_v2" "allow_ssh" {
   security_group_id = openstack_networking_secgroup_v2.ci_sg.id
 }
 
-# 🔹 Générer le cloud-init à partir du template
+#  Générer le cloud-init à partir du template
 data "template_file" "cloudinit" {
   template = file("${path.module}/cloudinit.tpl")
   vars = {
@@ -73,7 +73,7 @@ data "template_file" "cloudinit" {
   }
 }
 
-# 🔹 Création de la machine CI
+#  Création de la machine CI
 resource "openstack_compute_instance_v2" "machine_ci" {
   name            = "machine-CI"
   image_name      = var.vm_image
@@ -82,8 +82,19 @@ resource "openstack_compute_instance_v2" "machine_ci" {
   security_groups = [openstack_networking_secgroup_v2.ci_sg.name]
 
   network {
-    name = var.network_name
+    name     = var.network_name       # ex: private-net
+    fixed_ip = var.machine_ci_private_ip  # IP privée fixe
   }
 
   user_data = data.template_file.cloudinit.rendered
+}
+
+#  Adresse IP flottante publique
+resource "openstack_networking_floatingip_v2" "ci_floating_ip" {
+  pool = var.floating_ip_pool
+}
+
+resource "openstack_compute_floatingip_associate_v2" "ci_fip_assoc" {
+  floating_ip = openstack_networking_floatingip_v2.ci_floating_ip.address
+  instance_id = openstack_compute_instance_v2.machine_ci.id
 }
