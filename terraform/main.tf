@@ -94,7 +94,8 @@ resource "openstack_networking_floatingip_v2" "ci_floating_ip" {
   pool = var.floating_ip_pool
 }
 
-resource "openstack_compute_floatingip_associate_v2" "ci_fip_assoc" {
-  floating_ip = openstack_networking_floatingip_v2.ci_floating_ip.address
-  instance_id = openstack_compute_instance_v2.machine_ci.id
+resource "openstack_networking_floatingip_associate_v2" "ci_fip_assoc" {
+  floatingip_id = openstack_networking_floatingip_v2.ci_floating_ip.id
+  port_id       = openstack_compute_instance_v2.machine_ci.network[0].port
 }
+

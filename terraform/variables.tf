@@ -33,7 +33,7 @@ variable "OS_AUTH_URL" {
 variable "ssh_key_name" {
   description = "Nom de la clé SSH dans OpenStack"
   type        = string
-  default     = "my-ssh-key"  
+    
 }
 
 
