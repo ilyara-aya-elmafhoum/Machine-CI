@@ -88,3 +88,7 @@ variable "network_name" {
   default     = "10.0.0.11"
   
 }
+variable "machine_ci_private_ip" {
+  description = "Adresse IP privée fixe pour la machine CI"
+  type        = string
+}
