@@ -1,79 +1,40 @@
----
-# 1. Créer l'utilisateur github-runner
+# 1. Créer le groupe github-runner
+- name: Créer le groupe github-runner
+  group:
+    name: github-runner
+    state: present
+  become: yes
+
+# 2. Créer l'utilisateur github-runner
 - name: Créer l'utilisateur github-runner
   user:
     name: github-runner
     shell: /bin/bash
     create_home: yes
+    group: github-runner
   become: yes
 
-# 2. Créer le dossier runner et donner la propriété
+# 3. Créer le dossier runner
 - name: Créer dossier GitHub Runner
   file:
     path: /opt/github-runner
     state: directory
     mode: '0755'
-    owner: github-runner
-    group: github-runner
   become: yes
 
-# 3. Télécharger le GitHub Runner
+# 4. Télécharger le GitHub Runner (sans owner/group)
 - name: Télécharger GitHub Runner
   get_url:
     url: https://github.com/actions/runner/releases/download/v2.308.0/actions-runner-linux-x64-2.308.0.tar.gz
     dest: /opt/github-runner/actions-runner-linux-x64.tar.gz
     mode: '0644'
+  become: yes
+
+# 5. Changer le propriétaire après téléchargement
+- name: Changer propriétaire du dossier GitHub Runner
+  file:
+    path: /opt/github-runner
     owner: github-runner
     group: github-runner
-  become: yes
-
-# 4. Extraire le runner
-- name: Extraire le runner
-  unarchive:
-    src: /opt/github-runner/actions-runner-linux-x64.tar.gz
-    dest: /opt/github-runner
-    remote_src: yes
-    owner: github-runner
-    group: github-runner
-  become: yes
-
-# 5. Installer Libicu pour Dotnet
-- name: Installer Libicu pour Dotnet
-  apt:
-    name: libicu-dev
-    state: present
-    update_cache: yes
-  become: yes
-
-# 6. Installer les dépendances Dotnet
-- name: Installer les dépendances Dotnet
-  command: ./bin/installdependencies.sh
-  args:
-    chdir: /opt/github-runner
-  become: yes  # exécute en root car nécessite sudo
-
-# 7. Configurer le runner GitHub
-- name: Configurer le runner GitHub
-  shell: |
-    sudo -u github-runner bash -lc "./config.sh \
-      --url https://github.com/{{ github_repo }} \
-      --token {{ github_token }} \
-      --labels ci,sonarqube \
-      --unattended"
-  args:
-    chdir: /opt/github-runner
-  become: yes
-
-# 8. Installer le service GitHub Runner
-- name: Installer le service GitHub Runner
-  shell: ./svc.sh install
-  args:
-    chdir: /opt/github-runner
-  become: yes
-
-# 9. Démarrer le runner
-- name: Démarrer le runner
-  shell: ./svc.sh start
-  args:
-    chdir: /opt/github-runner
+    recurse: yes
   become: yes
