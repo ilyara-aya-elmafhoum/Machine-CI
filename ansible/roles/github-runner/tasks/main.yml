@@ -1,12 +1,25 @@
 ---
-# 1. Créer le groupe github-runner
+# 1. Créer le groupe github-runner si absent
+- name: Vérifier si le groupe github-runner existe
+  getent:
+    database: group
+    key: github-runner
+  register: github_group
+
 - name: Créer le groupe github-runner
   group:
     name: github-runner
     state: present
   become: yes
+  when: github_group.failed
 
-# 2. Créer l'utilisateur github-runner
+# 2. Créer l'utilisateur github-runner si absent
+- name: Vérifier si l'utilisateur github-runner existe
+  getent:
+    database: passwd
+    key: github-runner
+  register: github_user
+
 - name: Créer l'utilisateur github-runner
   user:
     name: github-runner
@@ -14,16 +27,24 @@
     create_home: yes
     group: github-runner
   become: yes
+  when: github_user.failed
 
-# 3. Créer le dossier runner et donner la propriété
-- name: Créer dossier GitHub Runner
+# 3. Vérifier et créer le dossier runner
+- name: Vérifier si le dossier /opt/github-runner existe
+  stat:
+    path: /opt/github-runner
+  register: runner_dir
+
+- name: Créer le dossier GitHub Runner si absent
   file:
     path: /opt/github-runner
     state: directory
     mode: '0755'
     owner: github-runner
     group: github-runner
+    recurse: yes
   become: yes
+  when: not runner_dir.stat.exists
 
 # 4. Télécharger le GitHub Runner
 - name: Télécharger GitHub Runner
@@ -34,6 +55,7 @@
     owner: github-runner
     group: github-runner
   become: yes
+  when: not runner_dir.stat.exists or not lookup('file', '/opt/github-runner/actions-runner-linux-x64.tar.gz', errors='ignore')
 
 # 5. Extraire le runner
 - name: Extraire le runner
@@ -44,6 +66,7 @@
     owner: github-runner
     group: github-runner
   become: yes
+  when: not runner_dir.stat.exists
 
 # 6. Installer Libicu pour Dotnet
 - name: Installer Libicu pour Dotnet
@@ -71,6 +94,7 @@
   args:
     chdir: /opt/github-runner
   become: yes
+  when: not runner_dir.stat.exists
 
 # 9. Installer le service GitHub Runner
 - name: Installer le service GitHub Runner
@@ -78,6 +102,7 @@
   args:
     chdir: /opt/github-runner
   become: yes
+  when: not runner_dir.stat.exists
 
 # 10. Démarrer le runner
 - name: Démarrer le runner
