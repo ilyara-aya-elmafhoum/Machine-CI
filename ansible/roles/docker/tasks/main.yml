@@ -12,18 +12,19 @@
       - curl
       - gnupg
       - lsb-release
+      - software-properties-common
     state: present
     update_cache: yes
 
 - name: Télécharger la clé GPG Docker
   get_url:
-    url: https://download.docker.com/linux/ubuntu/gpg
+    url: https://download.docker.com/linux/debian/gpg
     dest: /usr/share/keyrings/docker-archive-keyring.gpg
     mode: '0644'
 
-- name: Ajouter le dépôt officiel Docker
+- name: Ajouter le dépôt officiel Docker pour Debian Trixie
   apt_repository:
-    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable"
+    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian trixie stable"
     state: present
     filename: docker
 
@@ -31,9 +32,12 @@
   apt:
     update_cache: yes
 
-- name: Installer Docker
+- name: Installer Docker et dépendances
   apt:
-    name: docker-ce
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
     state: present
 
 - name: Activer et démarrer Docker
