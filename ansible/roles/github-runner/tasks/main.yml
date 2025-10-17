@@ -1,13 +1,21 @@
 ---
-# 1. Créer l'utilisateur github-runner
+# 1. Créer le groupe github-runner
+- name: Créer le groupe github-runner
+  group:
+    name: github-runner
+    state: present
+  become: yes
+
+# 2. Créer l'utilisateur github-runner
 - name: Créer l'utilisateur github-runner
   user:
     name: github-runner
     shell: /bin/bash
     create_home: yes
+    group: github-runner
   become: yes
 
-# 2. Créer le dossier runner et donner la propriété
+# 3. Créer le dossier runner et donner la propriété
 - name: Créer dossier GitHub Runner
   file:
     path: /opt/github-runner
@@ -17,17 +25,17 @@
     group: github-runner
   become: yes
 
-# 3. Télécharger le GitHub Runner
+# 4. Télécharger le GitHub Runner (dernière version stable)
 - name: Télécharger GitHub Runner
   get_url:
-    url: https://github.com/actions/runner/releases/download/v2.308.0/actions-runner-linux-x64-2.308.0.tar.gz
+    url: "https://github.com/actions/runner/releases/download/v2.329.0/actions-runner-linux-x64-2.329.0.tar.gz"
     dest: /opt/github-runner/actions-runner-linux-x64.tar.gz
     mode: '0644'
     owner: github-runner
     group: github-runner
   become: yes
 
-# 4. Extraire le runner
+# 5. Extraire le runner
 - name: Extraire le runner
   unarchive:
     src: /opt/github-runner/actions-runner-linux-x64.tar.gz
@@ -37,7 +45,7 @@
     group: github-runner
   become: yes
 
-# 5. Installer Libicu pour Dotnet
+# 6. Installer Libicu pour Dotnet
 - name: Installer Libicu pour Dotnet
   apt:
     name: libicu-dev
@@ -45,14 +53,14 @@
     update_cache: yes
   become: yes
 
-# 6. Installer les dépendances Dotnet
+# 7. Installer les dépendances Dotnet
 - name: Installer les dépendances Dotnet
   command: ./bin/installdependencies.sh
   args:
     chdir: /opt/github-runner
-  become: yes  # exécute en root car nécessite sudo
+  become: yes
 
-# 7. Configurer le runner GitHub
+# 8. Configurer le runner GitHub
 - name: Configurer le runner GitHub
   shell: |
     sudo -u github-runner bash -lc "./config.sh \
@@ -64,14 +72,14 @@
     chdir: /opt/github-runner
   become: yes
 
-# 8. Installer le service GitHub Runner
+# 9. Installer le service GitHub Runner
 - name: Installer le service GitHub Runner
   shell: ./svc.sh install
   args:
     chdir: /opt/github-runner
   become: yes
 
-# 9. Démarrer le runner
+# 10. Démarrer le runner
 - name: Démarrer le runner
   shell: ./svc.sh start
   args:
