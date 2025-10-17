@@ -23,12 +23,20 @@
   apt:
     name: docker.io
     state: present
+    force: yes
 
-- name: Activer et démarrer Docker
-  systemd:
-    name: docker
-    enabled: yes
-    state: started
+- name: Créer un lien symbolique pour docker si nécessaire
+  file:
+    src: /usr/bin/docker
+    dest: /usr/local/bin/docker
+    state: link
+  when: not ansible_facts['distribution'] == ''  # simple check
+
+- name: Démarrer Docker daemon
+  shell: |
+    nohup dockerd >/var/log/dockerd.log 2>&1 &
+  args:
+    executable: /bin/bash
 
 - name: Vérifier Docker
   command: docker --version
