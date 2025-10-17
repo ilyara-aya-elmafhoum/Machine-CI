@@ -12,7 +12,6 @@
       - curl
       - gnupg
       - lsb-release
-      - software-properties-common
     state: present
     update_cache: yes
 
