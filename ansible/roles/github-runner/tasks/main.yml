@@ -38,3 +38,16 @@
     group: github-runner
     recurse: yes
   become: yes
+# 6. Installer le service GitHub Runner
+- name: Installer le service GitHub Runner
+  shell: ./svc.sh install
+  args:
+    chdir: /opt/github-runner
+  become: yes
+
+# 7. Démarrer le runner
+- name: Démarrer le runner
+  shell: ./svc.sh start
+  args:
+    chdir: /opt/github-runner
+  become: yes
