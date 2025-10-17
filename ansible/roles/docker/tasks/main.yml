@@ -25,12 +25,6 @@
     state: present
     force: yes
 
-- name: Créer un lien symbolique pour docker si nécessaire
-  file:
-    src: /usr/bin/docker
-    dest: /usr/local/bin/docker
-    state: link
-  when: not ansible_facts['distribution'] == ''  # simple check
 
 - name: Démarrer Docker daemon
   shell: |
