@@ -15,18 +15,8 @@
     group: github-runner
   become: yes
 
-# 3. Créer le dossier runner et donner la propriété
-- name: Créer dossier GitHub Runner
-  file:
-    path: /opt/github-runner
-    state: directory
-    mode: '0755'
-    owner: github-runner
-    group: github-runner
-  become: yes
-
-# 3 bis. Forcer la création du dossier avant téléchargement
-- name: Vérifier que le dossier /opt/github-runner existe
+# 3. Créer le dossier runner et donner la propriété (Garantit l'existence du chemin)
+- name: Créer dossier GitHub Runner et définir les permissions
   file:
     path: /opt/github-runner
     state: directory
@@ -71,6 +61,7 @@
   become: yes
 
 # 8. Configurer le runner GitHub
+# Note : Les variables 'github_repo' et 'github_token' doivent être définies.
 - name: Configurer le runner GitHub
   shell: |
     sudo -u github-runner bash -lc "./config.sh \
