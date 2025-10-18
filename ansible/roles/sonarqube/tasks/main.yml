@@ -26,4 +26,4 @@
         sonarqube_logs:
 
 - name: Lancer SonarQube
-  command: docker compose -f /opt/sonarqube/docker-compose.yml up -d
+  command: docker-compose -f /opt/sonarqube/docker-compose.yml up -d
