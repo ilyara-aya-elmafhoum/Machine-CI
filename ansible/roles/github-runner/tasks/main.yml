@@ -25,6 +25,16 @@
     group: github-runner
   become: yes
 
+# 3 bis. Forcer la création du dossier avant téléchargement
+- name: Vérifier que le dossier /opt/github-runner existe
+  file:
+    path: /opt/github-runner
+    state: directory
+    mode: '0755'
+    owner: github-runner
+    group: github-runner
+  become: yes
+
 # 4. Télécharger le GitHub Runner (dernière version stable)
 - name: Télécharger GitHub Runner
   get_url:
