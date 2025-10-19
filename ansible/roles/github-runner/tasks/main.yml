@@ -1,20 +1,20 @@
 ---
 # Rôle : Installation et configuration du GitHub Runner
 
-# 1. Créer le groupe github-runner
-- name: Créer le groupe github-runner
+# 1. Créer le groupe ansible-boot (si non existant)
+- name: Créer le groupe ansible-boot
   group:
-    name: github-runner
+    name: ansible-boot
     state: present
   become: yes
 
-# 2. Créer l'utilisateur github-runner
-- name: Créer l'utilisateur github-runner
+# 2. Créer l'utilisateur ansible-boot
+- name: Créer l'utilisateur ansible-boot
   user:
-    name: github-runner
+    name: ansible-boot
     shell: /bin/bash
     create_home: yes
-    group: github-runner
+    group: ansible-boot
   become: yes
 
 # 3. Créer le dossier du runner
@@ -23,18 +23,18 @@
     path: /opt/github-runner
     state: directory
     mode: '0755'
-    owner: github-runner
-    group: github-runner
+    owner: ansible-boot
+    group: ansible-boot
   become: yes
 
-# 4. Télécharger le GitHub Runner
+# 4. Télécharger GitHub Runner
 - name: Télécharger GitHub Runner
   get_url:
     url: "https://github.com/actions/runner/releases/download/v2.329.0/actions-runner-linux-x64-2.329.0.tar.gz"
     dest: /opt/github-runner/actions-runner-linux-x64.tar.gz
     mode: '0644'
-    owner: github-runner
-    group: github-runner
+    owner: ansible-boot
+    group: ansible-boot
   become: yes
 
 # 5. Extraire le runner
@@ -43,12 +43,12 @@
     src: /opt/github-runner/actions-runner-linux-x64.tar.gz
     dest: /opt/github-runner
     remote_src: yes
-    owner: github-runner
-    group: github-runner
+    owner: ansible-boot
+    group: ansible-boot
   become: yes
 
-# 6. Installer Libicu pour Dotnet
-- name: Installer Libicu pour Dotnet
+# 6. Installer libicu pour Dotnet
+- name: Installer libicu pour Dotnet
   apt:
     name: libicu-dev
     state: present
@@ -61,29 +61,33 @@
   args:
     chdir: /opt/github-runner
   become: yes
+  become_user: ansible-boot
 
 # 8. Configurer le runner GitHub
 - name: Configurer le runner GitHub
   shell: |
-    sudo -u github-runner bash -lc "./config.sh \
+    ./config.sh \
       --url https://github.com/{{ github_repo }} \
       --token {{ github_token }} \
       --labels ci,sonarqube \
-      --unattended"
+      --unattended
   args:
     chdir: /opt/github-runner
   become: yes
+  become_user: ansible-boot
 
 # 9. Installer le service GitHub Runner
 - name: Installer le service GitHub Runner
-  shell: ./svc.sh install
+  shell: ./svc.sh install ansible-boot
   args:
     chdir: /opt/github-runner
   become: yes
 
-# 10. Démarrer le runner
+# 10. Démarrer le service
 - name: Démarrer le runner
-  shell: ./svc.sh start
-  args:
-    chdir: /opt/github-runner
+  systemd:
+    name: "actions.runner.{{ github_repo | regex_replace('/', '-') }}.machine-ci.service"
+    state: started
+    enabled: yes
   become: yes
+
