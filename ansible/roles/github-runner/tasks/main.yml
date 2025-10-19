@@ -1,23 +1,25 @@
 ---
+# Rôle : Installation et configuration du GitHub Runner
+
 # 1. Créer le groupe github-runner
 - name: Créer le groupe github-runner
-  group:
+  ansible.builtin.group:
     name: github-runner
     state: present
   become: yes
 
 # 2. Créer l'utilisateur github-runner
 - name: Créer l'utilisateur github-runner
-  user:
+  ansible.builtin.user:
     name: github-runner
     shell: /bin/bash
     create_home: yes
     group: github-runner
   become: yes
 
-# 3. Créer le dossier runner et donner la propriété (Garantit l'existence du chemin)
+# 3. Créer le dossier runner et donner la propriété
 - name: Créer dossier GitHub Runner et définir les permissions
-  file:
+  ansible.builtin.file:
     path: /opt/github-runner
     state: directory
     mode: '0755'
@@ -25,9 +27,9 @@
     group: github-runner
   become: yes
 
-# 4. Télécharger le GitHub Runner (dernière version stable)
+# 4. Télécharger GitHub Runner
 - name: Télécharger GitHub Runner
-  get_url:
+  ansible.builtin.get_url:
     url: "https://github.com/actions/runner/releases/download/v2.329.0/actions-runner-linux-x64-2.329.0.tar.gz"
     dest: /opt/github-runner/actions-runner-linux-x64.tar.gz
     mode: '0644'
@@ -37,7 +39,7 @@
 
 # 5. Extraire le runner
 - name: Extraire le runner
-  unarchive:
+  ansible.builtin.unarchive:
     src: /opt/github-runner/actions-runner-linux-x64.tar.gz
     dest: /opt/github-runner
     remote_src: yes
@@ -47,23 +49,26 @@
 
 # 6. Installer Libicu pour Dotnet
 - name: Installer Libicu pour Dotnet
-  apt:
-    name: libicu-dev
+  ansible.builtin.apt:
+    name:
+      - libicu-dev
+      - libicu-devtools
     state: present
     update_cache: yes
   become: yes
 
-# 7. Installer les dépendances Dotnet
+# 7. Installer les dépendances Dotnet du runner
 - name: Installer les dépendances Dotnet
-  command: ./bin/installdependencies.sh
+  ansible.builtin.command: ./bin/installdependencies.sh
   args:
     chdir: /opt/github-runner
   become: yes
+  environment:
+    DEBIAN_FRONTEND: noninteractive
 
 # 8. Configurer le runner GitHub
-# Note : Les variables 'github_repo' et 'github_token' doivent être définies.
 - name: Configurer le runner GitHub
-  shell: |
+  ansible.builtin.shell: |
     sudo -u github-runner bash -lc "./config.sh \
       --url https://github.com/{{ github_repo }} \
       --token {{ github_token }} \
@@ -72,17 +77,28 @@
   args:
     chdir: /opt/github-runner
   become: yes
+  when: github_token is defined and github_token | length > 0
+  register: github_runner_config
+  failed_when: "'Invalid configuration' in github_runner_config.stderr"
 
 # 9. Installer le service GitHub Runner
 - name: Installer le service GitHub Runner
-  shell: ./svc.sh install
+  ansible.builtin.shell: ./svc.sh install
   args:
     chdir: /opt/github-runner
   become: yes
 
 # 10. Démarrer le runner
 - name: Démarrer le runner
-  shell: ./svc.sh start
+  ansible.builtin.shell: ./svc.sh start
   args:
     chdir: /opt/github-runner
+  become: yes
+
+# 11. S'assurer que SSH reste actif (prévention)
+- name: S'assurer que SSH est activé et démarre au boot
+  ansible.builtin.systemd:
+    name: ssh
+    state: started
+    enabled: yes
   become: yes
