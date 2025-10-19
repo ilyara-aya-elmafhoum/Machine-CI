@@ -1,25 +1,14 @@
----
-# Rôle : Installation et configuration du GitHub Runner
-
-# 1. Créer le groupe github-runner
-- name: Créer le groupe github-runner
-  ansible.builtin.group:
-    name: github-runner
-    state: present
-  become: yes
-
-# 2. Créer l'utilisateur github-runner
+ 1. Créer l'utilisateur github-runner
 - name: Créer l'utilisateur github-runner
-  ansible.builtin.user:
+  user:
     name: github-runner
     shell: /bin/bash
     create_home: yes
-    group: github-runner
   become: yes
 
-# 3. Créer le dossier runner et donner la propriété
-- name: Créer dossier GitHub Runner et définir les permissions
-  ansible.builtin.file:
+# 2. Créer le dossier runner et donner la propriété
+- name: Créer dossier GitHub Runner
+  file:
     path: /opt/github-runner
     state: directory
     mode: '0755'
@@ -27,19 +16,19 @@
     group: github-runner
   become: yes
 
-# 4. Télécharger GitHub Runner
+# 3. Télécharger le GitHub Runner
 - name: Télécharger GitHub Runner
-  ansible.builtin.get_url:
-    url: "https://github.com/actions/runner/releases/download/v2.329.0/actions-runner-linux-x64-2.329.0.tar.gz"
+  get_url:
+    url: https://github.com/actions/runner/releases/download/v2.308.0/actions-runner-linux-x64-2.308.0.tar.gz
     dest: /opt/github-runner/actions-runner-linux-x64.tar.gz
     mode: '0644'
     owner: github-runner
     group: github-runner
   become: yes
 
-# 5. Extraire le runner
+# 4. Extraire le runner
 - name: Extraire le runner
-  ansible.builtin.unarchive:
+  unarchive:
     src: /opt/github-runner/actions-runner-linux-x64.tar.gz
     dest: /opt/github-runner
     remote_src: yes
@@ -47,28 +36,24 @@
     group: github-runner
   become: yes
 
-# 6. Installer Libicu pour Dotnet
+# 5. Installer Libicu pour Dotnet
 - name: Installer Libicu pour Dotnet
-  ansible.builtin.apt:
-    name:
-      - libicu-dev
-      - libicu-devtools
+  apt:
+    name: libicu-dev
     state: present
     update_cache: yes
   become: yes
 
-# 7. Installer les dépendances Dotnet du runner
+# 6. Installer les dépendances Dotnet
 - name: Installer les dépendances Dotnet
-  ansible.builtin.command: ./bin/installdependencies.sh
+  command: ./bin/installdependencies.sh
   args:
     chdir: /opt/github-runner
-  become: yes
-  environment:
-    DEBIAN_FRONTEND: noninteractive
+  become: yes  # exécute en root car nécessite sudo
 
-# 8. Configurer le runner GitHub
+# 7. Configurer le runner GitHub
 - name: Configurer le runner GitHub
-  ansible.builtin.shell: |
+  shell: |
     sudo -u github-runner bash -lc "./config.sh \
       --url https://github.com/{{ github_repo }} \
       --token {{ github_token }} \
@@ -77,28 +62,17 @@
   args:
     chdir: /opt/github-runner
   become: yes
-  when: github_token is defined and github_token | length > 0
-  register: github_runner_config
-  failed_when: "'Invalid configuration' in github_runner_config.stderr"
 
-# 9. Installer le service GitHub Runner
+# 8. Installer le service GitHub Runner
 - name: Installer le service GitHub Runner
-  ansible.builtin.shell: ./svc.sh install
+  shell: ./svc.sh install
   args:
     chdir: /opt/github-runner
   become: yes
 
-# 10. Démarrer le runner
+# 9. Démarrer le runner
 - name: Démarrer le runner
-  ansible.builtin.shell: ./svc.sh start
+  shell: ./svc.sh start
   args:
     chdir: /opt/github-runner
-  become: yes
-
-# 11. S'assurer que SSH reste actif (prévention)
-- name: S'assurer que SSH est activé et démarre au boot
-  ansible.builtin.systemd:
-    name: ssh
-    state: started
-    enabled: yes
   become: yes
