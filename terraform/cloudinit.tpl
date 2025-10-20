@@ -9,28 +9,28 @@ users:
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
     ssh_authorized_keys:
-      - ${sysadmin_pub_key}
+      - ${sysadmin_public_key}
 
   - name: devops-aya
     groups: sudo
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
     ssh_authorized_keys:
-      - ${devops_aya_pub_key}
+      - ${devops_aya_public_key}
 
   - name: terraform-boot
     groups: sudo
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
     ssh_authorized_keys:
-      - ${terraform_boot_pub_key}
+      - ${terraform_boot_public_key}
 
   - name: ansible-boot
     groups: sudo
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
     ssh_authorized_keys:
-      - ${ansible_boot_pub_key}
+      - ${ansible_boot_public_key}
 
 # Packages à installer
 package_update: true
