@@ -64,7 +64,6 @@ resource "openstack_networking_secgroup_rule_v2" "allow_sonarqube" {
   security_group_id = openstack_networking_secgroup_v2.ci_sg.id
 }
 
-
 # Cloud-init
 data "template_file" "cloudinit" {
   template = file("${path.module}/cloudinit.tpl")
@@ -77,7 +76,7 @@ data "template_file" "cloudinit" {
   }
 }
 
-# Port privé pour la VM CI
+# Port privé pour la VM CI avec SG attaché
 resource "openstack_networking_port_v2" "ci_port" {
   name       = "ci-port"
   network_id = var.network_id
@@ -86,9 +85,11 @@ resource "openstack_networking_port_v2" "ci_port" {
     subnet_id  = var.subnet_id
     ip_address = var.machine_ci_private_ip
   }
+
+  security_groups = [openstack_networking_secgroup_v2.ci_sg.id]  # <-- SG appliqué ici
 }
 
-# Instance de la machine CI
+# Instance de la machine CI (pas besoin de security_groups ici)
 resource "openstack_compute_instance_v2" "machine_ci" {
   name        = "machine-CI"
   image_name  = var.vm_image
@@ -98,9 +99,6 @@ resource "openstack_compute_instance_v2" "machine_ci" {
   network {
     port = openstack_networking_port_v2.ci_port.id
   }
-
-  # Appliquer le Security Group via son ID unique
-  security_groups = [openstack_networking_secgroup_v2.ci_sg.id]
 
   user_data = data.template_file.cloudinit.rendered
 }
