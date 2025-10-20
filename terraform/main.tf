@@ -17,13 +17,13 @@ provider "openstack" {
   region           = var.region
 }
 
-# Security group pour machine CI
+# Security group CI
 resource "openstack_networking_secgroup_v2" "ci_sg" {
   name        = "machine-ci-sg"
   description = "Sécurité pour la machine CI"
 }
 
-# Règle SSH
+# Rule SSH
 resource "openstack_networking_secgroup_rule_v2" "allow_ssh" {
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -34,7 +34,7 @@ resource "openstack_networking_secgroup_rule_v2" "allow_ssh" {
   security_group_id = openstack_networking_secgroup_v2.ci_sg.id
 }
 
-# Règle HTTP
+# Rule HTTP
 resource "openstack_networking_secgroup_rule_v2" "allow_http" {
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -44,13 +44,23 @@ resource "openstack_networking_secgroup_rule_v2" "allow_http" {
   security_group_id = openstack_networking_secgroup_v2.ci_sg.id
 }
 
-# Règle HTTPS
+# Rule HTTPS
 resource "openstack_networking_secgroup_rule_v2" "allow_https" {
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "tcp"
   port_range_min    = 443
   port_range_max    = 443
+  security_group_id = openstack_networking_secgroup_v2.ci_sg.id
+}
+
+# Rule SonarQube
+resource "openstack_networking_secgroup_rule_v2" "allow_sonarqube" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    = 9000
+  port_range_max    = 9000
   security_group_id = openstack_networking_secgroup_v2.ci_sg.id
 }
 
@@ -66,7 +76,7 @@ data "template_file" "cloudinit" {
   }
 }
 
-# Port privé pour la VM CI
+# Port privé pour CI
 resource "openstack_networking_port_v2" "ci_port" {
   name       = "ci-port"
   network_id = var.network_id
@@ -75,13 +85,9 @@ resource "openstack_networking_port_v2" "ci_port" {
     subnet_id  = var.subnet_id
     ip_address = var.machine_ci_private_ip
   }
-
-  security_groups = [
-    openstack_networking_secgroup_v2.ci_sg.id
-  ]
 }
 
-# Instance de la machine CI
+# Instance CI
 resource "openstack_compute_instance_v2" "machine_ci" {
   name        = "machine-CI"
   image_name  = var.vm_image
@@ -91,6 +97,10 @@ resource "openstack_compute_instance_v2" "machine_ci" {
   network {
     port = openstack_networking_port_v2.ci_port.id
   }
+
+  security_groups = [
+    openstack_networking_secgroup_v2.ci_sg.name
+  ]
 
   user_data = data.template_file.cloudinit.rendered
 }
