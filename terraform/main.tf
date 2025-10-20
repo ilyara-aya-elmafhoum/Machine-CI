@@ -13,8 +13,8 @@ provider "openstack" {
   password         = var.OS_PASSWORD
   auth_url         = var.OS_AUTH_URL
   tenant_id        = var.OS_PROJECT_ID
-  user_domain_name = "Default"
-  region           = "dc3-a"
+  user_domain_name = var.user_domain_name
+  region           = var.region
 }
 
 # Security Group
@@ -23,6 +23,7 @@ resource "openstack_networking_secgroup_v2" "ci_sg" {
   description = "Sécurité pour machine CI/CD"
 }
 
+# Règles HTTP, HTTPS, SSH, SonarQube
 resource "openstack_networking_secgroup_rule_v2" "allow_http" {
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -67,12 +68,11 @@ data "template_file" "cloudinit" {
     sysadmin_public_key       = var.sysadmin_pub_key
     devops_aya_public_key     = var.devops_aya_pub_key
     terraform_boot_public_key = var.terraform_boot_pub_key
-    ansible_boot_public_key   = var.ansible_boot_pub_key
     admin_cidr                = var.admin_cidr
   }
 }
 
-# Private Port
+# Port privé avec Security Group attaché
 resource "openstack_networking_port_v2" "ci_port" {
   name       = "ci-port"
   network_id = var.network_id
@@ -81,9 +81,13 @@ resource "openstack_networking_port_v2" "ci_port" {
     subnet_id  = var.subnet_id
     ip_address = var.machine_ci_private_ip
   }
+
+  security_groups = [
+    openstack_networking_secgroup_v2.ci_sg.id
+  ]
 }
 
-# Compute Instance
+# Instance
 resource "openstack_compute_instance_v2" "machine_ci" {
   name        = "machine-CI"
   image_name  = var.vm_image
@@ -94,8 +98,7 @@ resource "openstack_compute_instance_v2" "machine_ci" {
     port = openstack_networking_port_v2.ci_port.id
   }
 
-  security_groups = [openstack_networking_secgroup_v2.ci_sg.name]
-  user_data       = data.template_file.cloudinit.rendered
+  user_data = data.template_file.cloudinit.rendered
 }
 
 # Floating IP
@@ -106,5 +109,6 @@ resource "openstack_networking_floatingip_v2" "ci_fip" {
 
 # Output
 output "ci_ip" {
-  value = openstack_networking_floatingip_v2.ci_fip.address
+  description = "Adresse IP publique de la machine CI"
+  value       = openstack_networking_floatingip_v2.ci_fip.address
 }

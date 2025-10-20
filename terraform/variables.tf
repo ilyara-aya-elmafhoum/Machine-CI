@@ -30,6 +30,18 @@ variable "OS_AUTH_URL" {
   type        = string
 }
 
+
+variable "user_domain_name" {
+  description = "Nom du domaine utilisateur OpenStack"
+  type        = string
+}
+
+variable "region" {
+  description = "Region OpenStack"
+  type        = string
+  
+}
+
 variable "ssh_key_name" {
   description = "Nom de la clé SSH dans OpenStack"
   type        = string
