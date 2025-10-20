@@ -68,7 +68,7 @@ data "template_file" "cloudinit" {
     sysadmin_public_key       = var.sysadmin_pub_key
     devops_aya_public_key     = var.devops_aya_pub_key
     terraform_boot_public_key = var.terraform_boot_pub_key
-    ansible_boot_public_key   = var.ansible_boot_public_key
+    ansible_boot_public_key   = var.ansible_boot_pub_key
     admin_cidr                = var.admin_cidr
   }
 }
