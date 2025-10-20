@@ -76,7 +76,7 @@ data "template_file" "cloudinit" {
   }
 }
 
-# Port privé pour la VM CI avec SG attaché
+# Port privé pour la VM CI (sans security_groups ici)
 resource "openstack_networking_port_v2" "ci_port" {
   name       = "ci-port"
   network_id = var.network_id
@@ -85,11 +85,9 @@ resource "openstack_networking_port_v2" "ci_port" {
     subnet_id  = var.subnet_id
     ip_address = var.machine_ci_private_ip
   }
-
-  security_groups = [openstack_networking_secgroup_v2.ci_sg.id]  # <-- SG appliqué ici
 }
 
-# Instance de la machine CI (pas besoin de security_groups ici)
+# Instance de la machine CI (Security Group attaché ici)
 resource "openstack_compute_instance_v2" "machine_ci" {
   name        = "machine-CI"
   image_name  = var.vm_image
@@ -99,6 +97,8 @@ resource "openstack_compute_instance_v2" "machine_ci" {
   network {
     port = openstack_networking_port_v2.ci_port.id
   }
+
+  security_groups = [openstack_networking_secgroup_v2.ci_sg.name]
 
   user_data = data.template_file.cloudinit.rendered
 }
