@@ -17,13 +17,13 @@ provider "openstack" {
   region           = var.region
 }
 
-# Security Group pour machine CI/CD
+# Security group pour machine CI
 resource "openstack_networking_secgroup_v2" "ci_sg" {
   name        = "machine-ci-sg"
   description = "Sécurité pour machine CI"
 }
 
-# Règles pour SSH limité à l’admin CIDR
+# Rule SSH
 resource "openstack_networking_secgroup_rule_v2" "allow_ssh" {
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -34,7 +34,7 @@ resource "openstack_networking_secgroup_rule_v2" "allow_ssh" {
   security_group_id = openstack_networking_secgroup_v2.ci_sg.id
 }
 
-# Règles pour HTTP
+# Rule HTTP
 resource "openstack_networking_secgroup_rule_v2" "allow_http" {
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -44,7 +44,7 @@ resource "openstack_networking_secgroup_rule_v2" "allow_http" {
   security_group_id = openstack_networking_secgroup_v2.ci_sg.id
 }
 
-# Règles pour HTTPS
+# Rule HTTPS
 resource "openstack_networking_secgroup_rule_v2" "allow_https" {
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -54,7 +54,7 @@ resource "openstack_networking_secgroup_rule_v2" "allow_https" {
   security_group_id = openstack_networking_secgroup_v2.ci_sg.id
 }
 
-# Règles pour SonarQube
+# Rule SonarQube
 resource "openstack_networking_secgroup_rule_v2" "allow_sonarqube" {
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -85,8 +85,6 @@ resource "openstack_networking_port_v2" "ci_port" {
     subnet_id  = var.subnet_id
     ip_address = var.machine_ci_private_ip
   }
-
-
 }
 
 # Instance de la machine CI
@@ -100,7 +98,7 @@ resource "openstack_compute_instance_v2" "machine_ci" {
     port = openstack_networking_port_v2.ci_port.id
   }
 
-  # Attacher le Security Group sur l’instance 
+  # Appliquer le Security Group via son nom comme pour machine-AI
   security_groups = [
     openstack_networking_secgroup_v2.ci_sg.name
   ]
