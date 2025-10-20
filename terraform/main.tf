@@ -17,40 +17,13 @@ provider "openstack" {
   region           = var.region
 }
 
-# Security Group
+# Security Group pour machine CI/CD
 resource "openstack_networking_secgroup_v2" "ci_sg" {
   name        = "machine-ci-sg"
   description = "Sécurité pour machine CI/CD"
 }
 
-# Règles HTTP, HTTPS, SSH, SonarQube
-resource "openstack_networking_secgroup_rule_v2" "allow_http" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 80
-  port_range_max    = 80
-  security_group_id = openstack_networking_secgroup_v2.ci_sg.id
-}
-
-resource "openstack_networking_secgroup_rule_v2" "allow_https" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 443
-  port_range_max    = 443
-  security_group_id = openstack_networking_secgroup_v2.ci_sg.id
-}
-
-resource "openstack_networking_secgroup_rule_v2" "allow_sonarqube" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 9000
-  port_range_max    = 9000
-  security_group_id = openstack_networking_secgroup_v2.ci_sg.id
-}
-
+# Règles pour SSH limité à l’admin CIDR
 resource "openstack_networking_secgroup_rule_v2" "allow_ssh" {
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -60,6 +33,37 @@ resource "openstack_networking_secgroup_rule_v2" "allow_ssh" {
   remote_ip_prefix  = var.admin_cidr
   security_group_id = openstack_networking_secgroup_v2.ci_sg.id
 }
+
+# Règles pour HTTP
+resource "openstack_networking_secgroup_rule_v2" "allow_http" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    = 80
+  port_range_max    = 80
+  security_group_id = openstack_networking_secgroup_v2.ci_sg.id
+}
+
+# Règles pour HTTPS
+resource "openstack_networking_secgroup_rule_v2" "allow_https" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    = 443
+  port_range_max    = 443
+  security_group_id = openstack_networking_secgroup_v2.ci_sg.id
+}
+
+# Règles pour SonarQube
+resource "openstack_networking_secgroup_rule_v2" "allow_sonarqube" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    = 9000
+  port_range_max    = 9000
+  security_group_id = openstack_networking_secgroup_v2.ci_sg.id
+}
+
 
 # Cloud-init
 data "template_file" "cloudinit" {
@@ -73,7 +77,7 @@ data "template_file" "cloudinit" {
   }
 }
 
-# Port privé
+# Port privé pour la VM CI
 resource "openstack_networking_port_v2" "ci_port" {
   name       = "ci-port"
   network_id = var.network_id
@@ -84,7 +88,7 @@ resource "openstack_networking_port_v2" "ci_port" {
   }
 }
 
-# Instance
+# Instance de la machine CI
 resource "openstack_compute_instance_v2" "machine_ci" {
   name        = "machine-CI"
   image_name  = var.vm_image
@@ -95,13 +99,13 @@ resource "openstack_compute_instance_v2" "machine_ci" {
     port = openstack_networking_port_v2.ci_port.id
   }
 
-  # Appliquer le Security Group ici
-  security_groups = [openstack_networking_secgroup_v2.ci_sg.name]
+  # Appliquer le Security Group via son ID unique
+  security_groups = [openstack_networking_secgroup_v2.ci_sg.id]
 
   user_data = data.template_file.cloudinit.rendered
 }
 
-# Floating IP
+# Floating IP pour la VM CI
 resource "openstack_networking_floatingip_v2" "ci_fip" {
   pool    = var.floating_ip_pool
   port_id = openstack_networking_port_v2.ci_port.id
