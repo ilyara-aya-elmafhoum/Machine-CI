@@ -20,7 +20,7 @@ provider "openstack" {
 # Security Group pour machine CI/CD
 resource "openstack_networking_secgroup_v2" "ci_sg" {
   name        = "machine-ci-sg"
-  description = "Sécurité pour machine CI/CD"
+  description = "Sécurité pour machine CI"
 }
 
 # Règles pour SSH limité à l’admin CIDR
@@ -76,7 +76,7 @@ data "template_file" "cloudinit" {
   }
 }
 
-# Port privé pour la VM CI (sans security_groups ici)
+# Port privé pour la VM CI
 resource "openstack_networking_port_v2" "ci_port" {
   name       = "ci-port"
   network_id = var.network_id
@@ -85,9 +85,11 @@ resource "openstack_networking_port_v2" "ci_port" {
     subnet_id  = var.subnet_id
     ip_address = var.machine_ci_private_ip
   }
+
+
 }
 
-# Instance de la machine CI (Security Group attaché ici)
+# Instance de la machine CI
 resource "openstack_compute_instance_v2" "machine_ci" {
   name        = "machine-CI"
   image_name  = var.vm_image
@@ -98,7 +100,10 @@ resource "openstack_compute_instance_v2" "machine_ci" {
     port = openstack_networking_port_v2.ci_port.id
   }
 
-  security_groups = [openstack_networking_secgroup_v2.ci_sg.name]
+  # Attacher le Security Group sur l’instance 
+  security_groups = [
+    openstack_networking_secgroup_v2.ci_sg.name
+  ]
 
   user_data = data.template_file.cloudinit.rendered
 }
