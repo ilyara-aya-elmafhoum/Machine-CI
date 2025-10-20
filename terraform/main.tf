@@ -68,11 +68,12 @@ data "template_file" "cloudinit" {
     sysadmin_public_key       = var.sysadmin_pub_key
     devops_aya_public_key     = var.devops_aya_pub_key
     terraform_boot_public_key = var.terraform_boot_pub_key
+    ansible_boot_public_key   = var.ansible_boot_public_key
     admin_cidr                = var.admin_cidr
   }
 }
 
-# Port privé avec Security Group attaché
+# Port privé
 resource "openstack_networking_port_v2" "ci_port" {
   name       = "ci-port"
   network_id = var.network_id
@@ -81,10 +82,6 @@ resource "openstack_networking_port_v2" "ci_port" {
     subnet_id  = var.subnet_id
     ip_address = var.machine_ci_private_ip
   }
-
-  security_groups = [
-    openstack_networking_secgroup_v2.ci_sg.id
-  ]
 }
 
 # Instance
@@ -97,6 +94,9 @@ resource "openstack_compute_instance_v2" "machine_ci" {
   network {
     port = openstack_networking_port_v2.ci_port.id
   }
+
+  # Appliquer le Security Group ici
+  security_groups = [openstack_networking_secgroup_v2.ci_sg.name]
 
   user_data = data.template_file.cloudinit.rendered
 }
