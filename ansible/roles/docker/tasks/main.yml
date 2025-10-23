@@ -19,18 +19,57 @@
   apt:
     update_cache: yes
 
-- name: Installer Docker
-  apt:
-    name: docker.io
+
+
+- name: Installer les dépendances nécessaires (Debian)
+  ansible.builtin.apt:
+    name: ['apt-transport-https', 'ca-certificates', 'curl', 'gnupg', 'software-properties-common']
     state: present
-    force: yes
+    update_cache: true
 
+- name: Créer le répertoire /etc/apt/keyrings
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
 
-- name: Démarrer Docker daemon
-  shell: |
-    nohup dockerd >/var/log/dockerd.log 2>&1 &
+- name: Ajouter la clé GPG officielle de Docker
+  ansible.builtin.shell: >
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
   args:
-    executable: /bin/bash
+    creates: /etc/apt/keyrings/docker.gpg
 
-- name: Vérifier Docker
-  command: docker --version
+- name: Définir les permissions de lecture pour la clé GPG
+  ansible.builtin.file:
+    path: /etc/apt/keyrings/docker.gpg
+    mode: 'a+r'
+
+- name: Ajouter le dépôt Docker à la liste des sources APT
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+    state: present
+    filename: docker
+
+- name: Installer Docker Engine, CLI, Containerd et le plugin Docker Compose
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+    update_cache: true
+
+- name: Assurer que le service Docker est démarré et activé au démarrage
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Ajouter l'utilisateur distant au groupe docker (si nécessaire)
+  ansible.builtin.user:
+    name: "{{ ansible-boot }}"
+    groups: docker
+    append: true
+  
