@@ -1,29 +1,16 @@
----
-- name: Supprimer le dépôt Docker obsolète
-  file:
+
+- name: Supprimer le dépôt Docker obsolète (s'il existe)
+  ansible.builtin.file:
     path: /etc/apt/sources.list.d/docker.list
     state: absent
 
-- name: Installer les dépendances de base
-  apt:
-    name:
-      - apt-transport-https
-      - ca-certificates
-      - curl
-      - gnupg
-      - lsb-release
-    state: present
-    update_cache: yes
-
-- name: Mettre à jour la liste des paquets
-  apt:
-    update_cache: yes
-
-
-
 - name: Installer les dépendances nécessaires (Debian)
   ansible.builtin.apt:
-    name: ['apt-transport-https', 'ca-certificates', 'curl', 'gnupg', 'software-properties-common']
+    name: >-
+      {{
+        ['apt-transport-https', 'ca-certificates', 'curl', 'gnupg']
+        + (['software-properties-common'] if ansible_distribution_major_version | int < 13 else [])
+      }}
     state: present
     update_cache: true
 
@@ -69,7 +56,7 @@
 
 - name: Ajouter l'utilisateur distant au groupe docker (si nécessaire)
   ansible.builtin.user:
-    name: "{{ ansible-boot }}"
+    name: "{{ ansible_user }}"
     groups: docker
     append: true
   
