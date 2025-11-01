@@ -37,7 +37,7 @@
     group: ansible-boot
   become: yes
 
-# 5. Extraire le runner
+# 5. Extraire le runner correctement
 - name: Extraire le runner
   unarchive:
     src: /opt/github-runner/actions-runner-linux-x64.tar.gz
@@ -45,6 +45,7 @@
     remote_src: yes
     owner: ansible-boot
     group: ansible-boot
+    extra_opts: [--strip-components=1]  # IMPORTANT pour placer svc.sh à la racine
   become: yes
 
 # 6. Installer libicu pour Dotnet
@@ -63,11 +64,11 @@
   become: yes
   become_user: root
 
-# 8. Configurer le runner GitHub : récupérer les variables
+# 8. Configurer le runner GitHub - récupérer token et repo
 - name: Récupérer les variables d'environnement
   set_fact:
-    github_token: "{{ GITHUB_RUNNER_TOKEN | default(lookup('env','GITHUB_RUNNER_TOKEN'), true) | default(lookup('env','GH_PERSONAL_TOKEN'), true) }}"
-    github_repo: "{{ GITHUB_REPO | default(lookup('env','GITHUB_REPO'), true) | default('ilyara-aya-elmafhoum/backend') }}"
+    github_token: "{{ GITHUB_RUNNER_TOKEN | default(lookup('env','GITHUB_RUNNER_TOKEN'), default(lookup('env','GH_PERSONAL_TOKEN'), '')) }}"
+    github_repo: "{{ GITHUB_REPO | default(lookup('env','GITHUB_REPO'), default('ilyara-aya-elmafhoum/backend')) }}"
 
 - name: Afficher la longueur du token lu par Ansible
   debug:
