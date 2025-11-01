@@ -63,11 +63,11 @@
   become: yes
   become_user: root
 
-# 8. Configurer le runner GitHub
+# 8. Configurer le runner GitHub : récupérer les variables
 - name: Récupérer les variables d'environnement
   set_fact:
-    github_token: "{{ GITHUB_RUNNER_TOKEN | default(lookup('env','GITHUB_RUNNER_TOKEN'), default(lookup('env','GH_PERSONAL_TOKEN'), '')) }}"
-    github_repo: "{{ GITHUB_REPO | default(lookup('env','GITHUB_REPO'), default('ilyara-aya-elmafhoum/backend', true)) }}"
+    github_token: "{{ GITHUB_RUNNER_TOKEN | default(lookup('env','GITHUB_RUNNER_TOKEN'), true) | default(lookup('env','GH_PERSONAL_TOKEN'), true) }}"
+    github_repo: "{{ GITHUB_REPO | default(lookup('env','GITHUB_REPO'), true) | default('ilyara-aya-elmafhoum/backend') }}"
 
 - name: Afficher la longueur du token lu par Ansible
   debug:
