@@ -65,10 +65,13 @@
 
 # 8. Configurer le runner GitHub
 - name: Configurer le runner GitHub
+  vars:
+    github_repo: "{{ lookup('env','GITHUB_REPO') }}"
+    github_token: "{{ lookup('env','GITHUB_RUNNER_TOKEN') }}"
   shell: |
     ./config.sh \
       --url https://github.com/{{ github_repo }} \
-      --token {{ GITHUB_PAT }} \
+      --token {{ github_token }} \
       --labels ci,sonarqube \
       --unattended
   args:
@@ -86,7 +89,7 @@
 # 10. Démarrer et activer le runner
 - name: Démarrer le runner
   systemd:
-    name: "actions.runner.{{ github_repo | regex_replace('/', '-') }}.machine-ci.service"
+    name: "actions.runner.{{ lookup('env','GITHUB_REPO') | regex_replace('/', '-') }}.machine-ci.service"
     state: started
     enabled: yes
   become: yes
