@@ -67,7 +67,7 @@
 - name: Récupérer les variables d'environnement
   set_fact:
     github_repo: "{{ lookup('env','GITHUB_REPO') | default('ilyara-aya-elmafhoum/backend', true) }}"
-    github_token: "{{ lookup('env','GITHUB_RUNNER_TOKEN') | default('', true) }}"
+    github_token: "{{ lookup('env','GITHUB_RUNNER_TOKEN') | default(lookup('env','GH_PERSONAL_TOKEN'), true) }}"
 
 - name: Vérifier la présence du token
   fail:
