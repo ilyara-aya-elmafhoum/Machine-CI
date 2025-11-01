@@ -1,7 +1,7 @@
 ---
 # Rôle : Installation et configuration du GitHub Runner
 
-# 1. Créer le groupe ansible-boot (si non existant)
+# 1. Créer le groupe ansible-boot
 - name: Créer le groupe ansible-boot
   group:
     name: ansible-boot
@@ -55,7 +55,7 @@
     update_cache: yes
   become: yes
 
-# 7. Installer les dépendances Dotnet (doit être root)
+# 7. Installer les dépendances Dotnet
 - name: Installer les dépendances Dotnet
   command: ./bin/installdependencies.sh
   args:
@@ -64,11 +64,19 @@
   become_user: root
 
 # 8. Configurer le runner GitHub
+- name: Récupérer les variables d'environnement
+  set_fact:
+    github_repo: "{{ lookup('env','GITHUB_REPO') | default('ilyara-aya-elmafhoum/backend', true) }}"
+    github_token: "{{ lookup('env','GITHUB_RUNNER_TOKEN') | default('', true) }}"
+
+- name: Vérifier la présence du token
+  fail:
+    msg: "Le token GitHub Runner (GITHUB_RUNNER_TOKEN) est vide. Vérifie que Semaphore ou GitHub Actions l’envoie correctement."
+  when: github_token | length == 0
+
 - name: Configurer le runner GitHub
-  vars:
-    github_repo: "{{ lookup('env','GITHUB_REPO') }}"
-    github_token: "{{ lookup('env','GITHUB_RUNNER_TOKEN') }}"
   shell: |
+    echo "[INFO] Configuration du runner pour le repo {{ github_repo }}"
     ./config.sh \
       --url https://github.com/{{ github_repo }} \
       --token {{ github_token }} \
@@ -86,10 +94,10 @@
     chdir: /opt/github-runner
   become: yes
 
-# 10. Démarrer et activer le runner
+# 10. Démarrer le service GitHub Runner
 - name: Démarrer le runner
   systemd:
-    name: "actions.runner.{{ lookup('env','GITHUB_REPO') | regex_replace('/', '-') }}.machine-ci.service"
+    name: "actions.runner.{{ github_repo | regex_replace('/', '-') }}.machine-ci.service"
     state: started
     enabled: yes
   become: yes
