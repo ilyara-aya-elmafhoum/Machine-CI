@@ -63,29 +63,22 @@
   become: yes
   become_user: root
 
-# 8. Configurer le runner GitHub
+#8. Configurer le runner GitHub
 - name: Récupérer les variables d'environnement
-  set_fact:
-    github_repo: "{{ lookup('env','GITHUB_REPO') | default('ilyara-aya-elmafhoum/backend', true) }}"
-    github_token: "{{ lookup('env','GITHUB_RUNNER_TOKEN') | default(lookup('env','GH_PERSONAL_TOKEN'), true) }}"
+  set_fact:
+    # PRIORITÉ 1: GITHUB_RUNNER_TOKEN comme variable Ansible directe (injectée par Semaphore)
+    # PRIORITÉ 2: lookup('env') (l'ancienne méthode qui a échoué)
+    github_token: "{{ GITHUB_RUNNER_TOKEN | default(lookup('env','GITHUB_RUNNER_TOKEN'), default(lookup('env','GH_PERSONAL_TOKEN'), '')) }}"
+    github_repo: "{{ GITHUB_REPO | default(lookup('env','GITHUB_REPO'), default('ilyara-aya-elmafhoum/backend', true)) }}"
+    
+- name: Afficher la longueur du token lu par Ansible
+  debug:
+    msg: "DEBUG - github_token length (Ansible): {{ github_token | length }}"
 
 - name: Vérifier la présence du token
-  fail:
-    msg: "Le token GitHub Runner (GITHUB_RUNNER_TOKEN) est vide. Vérifie que Semaphore ou GitHub Actions l’envoie correctement."
-  when: github_token | length == 0
-
-- name: Configurer le runner GitHub
-  shell: |
-    echo "[INFO] Configuration du runner pour le repo {{ github_repo }}"
-    ./config.sh \
-      --url https://github.com/{{ github_repo }} \
-      --token {{ github_token }} \
-      --labels ci,sonarqube \
-      --unattended
-  args:
-    chdir: /opt/github-runner
-  become: yes
-  become_user: ansible-boot
+  fail:
+    msg: "Le token GitHub Runner (GITHUB_RUNNER_TOKEN) est vide. Vérifie que Semaphore ou GitHub Actions l’envoie correctement."
+  when: github_token | length == 0
 
 # 9. Installer le service GitHub Runner
 - name: Installer le service GitHub Runner
