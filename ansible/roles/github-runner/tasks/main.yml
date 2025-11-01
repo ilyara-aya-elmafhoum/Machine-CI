@@ -64,7 +64,6 @@
   become_user: root
 
 # 8. Configurer le runner GitHub
-# 8. Configurer le runner GitHub
 - name: Configurer le runner GitHub
   vars:
     github_repo: "{{ lookup('env','GITHUB_REPO') }}"
@@ -79,7 +78,6 @@
     chdir: /opt/github-runner
   become: yes
   become_user: ansible-boot
-
 
 # 9. Installer le service GitHub Runner
 - name: Installer le service GitHub Runner
