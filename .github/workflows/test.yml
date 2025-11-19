@@ -50,23 +50,3 @@ jobs:
           GITHUB_RUNNER_TOKEN: ${{ env.GITHUB_RUNNER_TOKEN }}
         run: ./scripts/semaphore_task.sh ansible $ANSIBLE_TEMPLATE_ID
 
-  # 2. Destruction de la machine
-  destroy:
-    if: always()
-    runs-on: ubuntu-24.04
-    needs: create-runner
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Détruire la machine éphémère
-        run: |
-          chmod +x ./scripts/semaphore_task.sh
-          ./scripts/semaphore_task.sh destroy ${{ needs.create-runner.outputs.create_template_id }}
-        env:
-          SEMAPHORE_TOKEN: ${{ secrets.SEMAPHORE_TOKEN }}
-          SEMAPHORE_URL: ${{ env.SEMAPHORE_URL }}
-          PROJECT_ID: ${{ env.PROJECT_ID }}
-          CREATE_TEMPLATE_ID: ${{ env.CREATE_TEMPLATE_ID }}
-          ANSIBLE_TEMPLATE_ID: ${{ env.ANSIBLE_TEMPLATE_ID }}
