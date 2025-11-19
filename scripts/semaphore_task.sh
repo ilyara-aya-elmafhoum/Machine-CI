@@ -39,7 +39,7 @@ if [[ "$ACTION" == "ansible" ]]; then
     --arg template_id "$TEMPLATE_ID" \
     --arg action "$ACTION" \
     --arg github_token "$GITHUB_RUNNER_TOKEN" \
-    --arg github_repo "$GITHUB_REPO" \
+    --arg github_repo "https://github.com/$GITHUB_REPO" \
     '{
       template_id: ($template_id | tonumber),
       environment_variables: {
@@ -72,11 +72,11 @@ HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
 BODY=$(echo "$RESPONSE" | head -n -1)
 
 if [[ "$HTTP_STATUS" != "201" ]]; then
-  echo " Erreur lors du déclenchement de la tâche Semaphore (HTTP $HTTP_STATUS)"
+  echo " ❌ Erreur lors du déclenchement de la tâche Semaphore (HTTP $HTTP_STATUS)"
   echo "$BODY" | jq . || echo "$BODY"
   exit 1
 fi
 
 TASK_ID=$(echo "$BODY" | jq -r '.id // empty')
-echo " Task Semaphore déclenchée avec succès !"
+echo " ✅ Task Semaphore déclenchée avec succès !"
 echo "🔗 Lien : $SEMAPHORE_URL/projects/$PROJECT_ID/tasks/$TASK_ID"
