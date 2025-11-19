@@ -45,7 +45,7 @@
     remote_src: yes
     owner: ansible-boot
     group: ansible-boot
-    extra_opts: [--strip-components=1]  # IMPORTANT pour placer svc.sh à la racine
+    extra_opts: [--strip-components=1]
   become: yes
 
 # 6. Installer libicu pour Dotnet
@@ -64,29 +64,47 @@
   become: yes
   become_user: root
 
-# 8. Configurer le runner GitHub - récupérer token et repo
+# 8. Configurer les variables du GitHub Runner
 - name: Récupérer les variables d'environnement
   set_fact:
-    github_token: "{{ GITHUB_RUNNER_TOKEN | default(lookup('env','GITHUB_RUNNER_TOKEN'), default(lookup('env','GH_PERSONAL_TOKEN'), '')) }}"
-    github_repo: "{{ GITHUB_REPO | default(lookup('env','GITHUB_REPO'), default('ilyara-aya-elmafhoum/backend')) }}"
+    github_token: "{{ GITHUB_RUNNER_TOKEN
+                      | default(lookup('env','GITHUB_RUNNER_TOKEN'))
+                      | default(lookup('env','GH_PERSONAL_TOKEN'))
+                      | default('') }}"
+    github_repo: "{{ GITHUB_REPO
+                     | default(lookup('env','GITHUB_REPO'))
+                     | default('ilyara-aya-elmafhoum/backend') }}"
 
-- name: Afficher la longueur du token lu par Ansible
+- name: DEBUG - longueur du token
   debug:
-    msg: "DEBUG - github_token length (Ansible): {{ github_token | length }}"
+    msg: "Token GitHub reçu : {{ github_token | length }} caractères"
 
 - name: Vérifier la présence du token
   fail:
-    msg: "Le token GitHub Runner (GITHUB_RUNNER_TOKEN) est vide. Vérifie que Semaphore ou GitHub Actions l’envoie correctement."
+    msg: "❌ Le token GitHub Runner est vide ! Vérifie Semaphore/GitHub Actions."
   when: github_token | length == 0
 
-# 9. Installer le service GitHub Runner
+# 9. Configurer le runner
+- name: Configurer le runner GitHub (config.sh)
+  command: >
+    ./config.sh
+    --url https://github.com/{{ github_repo }}
+    --token {{ github_token }}
+    --unattended
+    --replace
+  args:
+    chdir: /opt/github-runner
+  become: yes
+  become_user: ansible-boot
+
+# 10. Installer le service GitHub Runner
 - name: Installer le service GitHub Runner
   shell: ./svc.sh install
   args:
     chdir: /opt/github-runner
   become: yes
 
-# 10. Démarrer le service GitHub Runner
+# 11. Démarrer le service GitHub Runner
 - name: Démarrer le runner
   systemd:
     name: "actions.runner.{{ github_repo | regex_replace('/', '-') }}.machine-ci.service"
