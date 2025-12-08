@@ -1,109 +1,82 @@
----
-# Rôle : Installation et configuration du GitHub Runner
+#!/bin/bash
+set -euo pipefail
 
-# 1. Créer le groupe ansible-boot
-- name: Créer le groupe ansible-boot
-  group:
-    name: ansible-boot
-    state: present
-  become: yes
+# -----------------------------
+# Paramètres
+# -----------------------------
+ACTION=${1:-create}        # create / ansible / destroy
+TEMPLATE_ID=${2:-18}       # Template Semaphore
 
-# 2. Créer l'utilisateur ansible-boot
-- name: Créer l'utilisateur ansible-boot
-  user:
-    name: ansible-boot
-    shell: /bin/bash
-    create_home: yes
-    group: ansible-boot
-  become: yes
+# Variables globales
+SEMAPHORE_URL="${SEMAPHORE_URL:-http://84.234.24.138:3000}"
+PROJECT_ID="${PROJECT_ID:-1}"
+TOKEN="${SEMAPHORE_TOKEN:-}"
+GITHUB_REPO="${GITHUB_REPO:-ilyara-aya-elmafhoum/backend}"
+GITHUB_RUNNER_TOKEN="${GITHUB_RUNNER_TOKEN:-}"
 
-# 3. Créer le dossier du runner
-- name: Créer le dossier GitHub Runner
-  file:
-    path: /opt/github-runner
-    state: directory
-    mode: '0755'
-    owner: ansible-boot
-    group: ansible-boot
-  become: yes
+# -----------------------------
+# Vérifications
+# -----------------------------
+if [[ -z "$TOKEN" ]]; then
+  echo " SEMAPHORE_TOKEN non défini."
+  exit 1
+fi
 
-# 4. Télécharger GitHub Runner
-- name: Télécharger GitHub Runner
-  get_url:
-    url: "https://github.com/actions/runner/releases/download/v2.329.0/actions-runner-linux-x64-2.329.0.tar.gz"
-    dest: /opt/github-runner/actions-runner-linux-x64.tar.gz
-    mode: '0644'
-    owner: ansible-boot
-    group: ansible-boot
-  become: yes
+if [[ "$ACTION" == "ansible" && -z "$GITHUB_RUNNER_TOKEN" ]]; then
+  echo "GITHUB_RUNNER_TOKEN non défini pour l’action ansible."
+  exit 1
+fi
 
-# 5. Extraire le runner correctement
-- name: Extraire le runner
-  unarchive:
-    src: /opt/github-runner/actions-runner-linux-x64.tar.gz
-    dest: /opt/github-runner
-    remote_src: yes
-    owner: ansible-boot
-    group: ansible-boot
-    extra_opts: [--strip-components=1]
-  become: yes
+echo "🔹 Action: $ACTION (template_id=$TEMPLATE_ID)"
+echo "🔹 Semaphore URL: $SEMAPHORE_URL"
+echo "🔹 Project ID: $PROJECT_ID"
 
-# 6. Installer libicu pour Dotnet
-- name: Installer libicu pour Dotnet
-  apt:
-    name: libicu-dev
-    state: present
-    update_cache: yes
-  become: yes
+# -----------------------------
+# Préparation du payload JSON
+# -----------------------------
+if [[ "$ACTION" == "ansible" ]]; then
+  JSON_PAYLOAD=$(jq -n \
+    --arg template_id "$TEMPLATE_ID" \
+    --arg action "$ACTION" \
+    --arg github_token "$GITHUB_RUNNER_TOKEN" \
+    --arg github_repo "https://github.com/$GITHUB_REPO" \
+    '{
+      template_id: ($template_id | tonumber),
+      environment_variables: {
+        ACTION: $action,
+        github_token: $github_token,
+        github_repo: $github_repo
+      }
+    }')
+else
+  JSON_PAYLOAD=$(jq -n \
+    --arg template_id "$TEMPLATE_ID" \
+    --arg action "$ACTION" \
+    '{
+      template_id: ($template_id | tonumber),
+      environment_variables: { ACTION: $action }
+    }')
+fi
 
-# 7. Installer les dépendances Dotnet
-- name: Installer les dépendances Dotnet
-  command: ./bin/installdependencies.sh
-  args:
-    chdir: /opt/github-runner
-  become: yes
-  become_user: root
+# -----------------------------
+# Appel à l’API Semaphore
+# -----------------------------
+API_URL="$SEMAPHORE_URL/api/project/$PROJECT_ID/tasks"
 
-# 8. Configurer les variables du GitHub Runner
-- name: Récupérer les variables d'environnement
-  set_fact:
-    github_token: "{{ GITHUB_RUNNER_TOKEN | default('') }}"
-    github_repo: "{{ GITHUB_REPO | default('ilyara-aya-elmafhoum/backend') }}"
+RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$API_URL" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "$JSON_PAYLOAD")
 
-# La tâche DEBUG et FAIL sont maintenant simplifiées :
-- name: DEBUG - longueur du token
-  debug:
-    msg: "Token GitHub reçu : {{ github_token | length }} caractères"
+HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+BODY=$(echo "$RESPONSE" | head -n -1)
 
-- name: Vérifier la présence du token
-  fail:
-    msg: "❌ Le token GitHub Runner est vide ! Vérifie Semaphore/GitHub Actions."
-  when: github_token | length < 10
+if [[ "$HTTP_STATUS" != "201" ]]; then
+  echo " ❌ Erreur lors du déclenchement de la tâche Semaphore (HTTP $HTTP_STATUS)"
+  echo "$BODY" | jq . || echo "$BODY"
+  exit 1
+fi
 
-# 9. Configurer le runner
-- name: Configurer le runner GitHub (config.sh)
-  command: >
-    ./config.sh
-    --url https://github.com/{{ github_repo }}
-    --token {{ github_token }}
-    --unattended
-    --replace
-  args:
-    chdir: /opt/github-runner
-  become: yes
-  become_user: ansible-boot
-
-# 10. Installer le service GitHub Runner
-- name: Installer le service GitHub Runner
-  shell: ./svc.sh install
-  args:
-    chdir: /opt/github-runner
-  become: yes
-
-# 11. Démarrer le service GitHub Runner
-- name: Démarrer le runner
-  systemd:
-    name: "actions.runner.{{ github_repo | regex_replace('/', '-') }}.machine-ci.service"
-    state: started
-    enabled: yes
-  become: yes
+TASK_ID=$(echo "$BODY" | jq -r '.id // empty')
+echo " ✅ Task Semaphore déclenchée avec succès !"
+echo "🔗 Lien : $SEMAPHORE_URL/projects/$PROJECT_ID/tasks/$TASK_ID"
