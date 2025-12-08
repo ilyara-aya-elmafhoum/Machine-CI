@@ -65,16 +65,10 @@
   become_user: root
 
 # 8. Configurer les variables du GitHub Runner
-# 8. Configurer les variables du GitHub Runner
 - name: Récupérer les variables d'environnement
   set_fact:
-    # 1. Récupère la variable GITHUB_RUNNER_TOKEN envoyée via extra_vars. 
-    # Si elle est vide (ce qui ne devrait pas arriver maintenant), utilise une chaîne vide.
-    github_token: "{{ GITHUB_RUNNER_TOKEN | default('') }}" 
-    
-    # 2. Récupère la variable GITHUB_REPO envoyée via extra_vars.
-    # Fournir une valeur par défaut claire si elle est vide.
-    github_repo: "{{ GITHUB_REPO | default('ilyara-aya-elmafhoum/backend') }}" 
+    github_token: "{{ GITHUB_RUNNER_TOKEN | default('') }}"
+    github_repo: "{{ GITHUB_REPO | default('ilyara-aya-elmafhoum/backend') }}"
 
 # La tâche DEBUG et FAIL sont maintenant simplifiées :
 - name: DEBUG - longueur du token
@@ -84,7 +78,8 @@
 - name: Vérifier la présence du token
   fail:
     msg: "❌ Le token GitHub Runner est vide ! Vérifie Semaphore/GitHub Actions."
-  when: github_token | length < 10 # Vérifions qu'il a une taille raisonnable, pas seulement > 0
+  when: github_token | length < 10
+
 # 9. Configurer le runner
 - name: Configurer le runner GitHub (config.sh)
   command: >
