@@ -68,9 +68,8 @@
 # 8. Configurer les variables du GitHub Runner
 - name: Récupérer les variables d'environnement
   set_fact:
-    github_token: "{{ GITHUB_RUNNER_TOKEN | default('') }}"
+    github_token: "{{ lookup('env','GITHUB_RUNNER_TOKEN') | default('') }}"
     github_repo: "{{ GITHUB_REPO | default('ilyara-aya-elmafhoum/backend') }}"
-
 # Inclure la tâche DEBUG pour être certain de la longueur du token (indispensable pour le débogage)
 - name: DEBUG - longueur du token
   debug:
