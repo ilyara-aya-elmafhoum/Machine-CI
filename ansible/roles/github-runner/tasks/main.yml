@@ -66,8 +66,8 @@
 # 8. Récupérer les variables depuis l'environnement
 - name: Récupérer les variables depuis l'environnement
   set_fact:
-    github_token: "{{ lookup('env','GITHUB_RUNNER_TOKEN') }}"
-    github_repo: "{{ lookup('env','GITHUB_REPO') | default('ilyara-aya-elmafhoum/backend') }}"
+    github_token: "{{ ANSIBLE_GITHUB_RUNNER_TOKEN | default('') }}"
+    github_repo: "{{ GITHUB_REPO | default('ilyara-aya-elmafhoum/backend') }}"
 
 - name: DEBUG - longueur du token
   debug:
