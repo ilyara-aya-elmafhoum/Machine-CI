@@ -63,11 +63,11 @@
     chdir: /opt/github-runner
   become: yes
 
-# 8. Récupérer les variables depuis extra_vars
-- name: Récupérer les variables depuis extra_vars
+# 8. Récupérer les variables depuis l'environnement
+- name: Récupérer les variables depuis l'environnement
   set_fact:
-    github_token: "{{ GITHUB_RUNNER_TOKEN }}"
-    github_repo: "{{ GITHUB_REPO | default('ilyara-aya-elmafhoum/backend') }}"
+    github_token: "{{ lookup('env','GITHUB_RUNNER_TOKEN') }}"
+    github_repo: "{{ lookup('env','GITHUB_REPO') | default('ilyara-aya-elmafhoum/backend') }}"
 
 - name: DEBUG - longueur du token
   debug:
@@ -77,6 +77,7 @@
   fail:
     msg: "❌ Le token GitHub Runner est vide ! Vérifie Semaphore/GitHub Actions."
   when: github_token | length < 10
+
 
 # 9. Configurer le runner
 - name: Configurer le runner GitHub (config.sh)
