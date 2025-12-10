@@ -63,11 +63,14 @@
     chdir: /opt/github-runner
   become: yes
   become_user: root
+
+# --- DEBUT DU BLOC MODIFIÉ ---
+
 # 8. Configurer les variables du GitHub Runner
+# Nous gardons la lecture ici pour le débogage et les vérifications
 - name: Récupérer les variables d'environnement
   set_fact:
-    # LECTURE FORCÉE DE LA VARIABLE D'ENVIRONNEMENT DE LA TÂCHE
-    github_token: "{{ lookup('env','GITHUB_RUNNER_TOKEN') | default('') }}" 
+    github_token: "{{ lookup('env','GITHUB_RUNNER_TOKEN') | default('') }}"
     github_repo: "{{ GITHUB_REPO | default('ilyara-aya-elmafhoum/backend') }}"
 
 - name: DEBUG - longueur du token
@@ -91,6 +94,9 @@
     chdir: /opt/github-runner
   become: yes
   become_user: ansible-boot
+  environment:
+    GITHUB_RUNNER_TOKEN: "{{ github_token }}"
+
 
 # 10. Installer le service GitHub Runner
 - name: Installer le service GitHub Runner
