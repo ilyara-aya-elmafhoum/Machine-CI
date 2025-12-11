@@ -1,6 +1,10 @@
 ---
 # Rôle : Installation et configuration du GitHub Runner
-# Avec génération du token directement depuis GitHub
+# Génération automatique du token via API GitHub
+
+# Variables attendues depuis Semaphore :
+# github_repo : repo complet, ex. "ilyara-aya-elmafhoum/backend"
+# github_pat  : Personal Access Token GitHub avec permission "repo" + "admin:repo_hook"
 
 # 1. Créer le groupe ansible-boot
 - name: Créer le groupe ansible-boot
@@ -28,7 +32,7 @@
     group: ansible-boot
   become: yes
 
-# 4. Télécharger GitHub Runner
+# 4. Télécharger le runner
 - name: Télécharger GitHub Runner
   get_url:
     url: "https://github.com/actions/runner/releases/download/v2.329.0/actions-runner-linux-x64-2.329.0.tar.gz"
@@ -64,7 +68,7 @@
     chdir: /opt/github-runner
   become: yes
 
-# 8. Générer le token GitHub Runner directement via l'API
+# 8. Générer le token GitHub Runner via l'API
 - name: Générer token GitHub Runner via API
   uri:
     url: "https://api.github.com/repos/{{ github_repo }}/actions/runners/registration-token"
@@ -72,22 +76,24 @@
     headers:
       Authorization: "Bearer {{ github_pat }}"
       Accept: "application/vnd.github+json"
+      Content-Type: "application/json"
+    body: "{}"
     return_content: yes
   register: runner_token_response
-  no_log: true   # Empêche l'affichage du token dans les logs
+  no_log: true   # Cache le token dans les logs
 
 # 9. Extraire le token
 - name: Extraire le token
   set_fact:
     github_token: "{{ runner_token_response.json.token }}"
 
-# 10. DEBUG - Vérifier que le token est présent
+# 10. Vérifier la présence du token
 - name: Vérifier la présence du token
   fail:
     msg: "Le token GitHub Runner est vide ! Vérifie la variable github_pat."
   when: github_token is not defined or github_token | length < 10
 
-# 11. Configurer le runner GitHub (config.sh)
+# 11. Configurer le runner GitHub
 - name: Configurer le runner GitHub (config.sh)
   command: >
     ./config.sh
@@ -114,3 +120,4 @@
     state: started
     enabled: yes
   become: yes
+
