@@ -1,4 +1,5 @@
 ---
+
 # 1. Créer le groupe ansible-boot
 - name: Créer le groupe ansible-boot
   group:
@@ -64,7 +65,7 @@
 # 8. Récupérer les variables depuis l'environnement
 - name: Récupérer les variables depuis l'environnement
   set_fact:
-    github_token: "{{ lookup('env', 'GITHUB_RUNNER_TOKEN') }}"
+    github_token: "{{ lookup('env', 'RUNNER_REGISTRATION_TOKEN') }}"
     github_repo: "{{ lookup('env', 'GITHUB_REPO') | default('ilyara-aya-elmafhoum/backend') }}"
 
 - name: DEBUG - longueur du token
