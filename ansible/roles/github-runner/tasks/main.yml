@@ -67,9 +67,7 @@
 # 8. Récupérer les variables
 - name: Récupérer les variables (Token via extra_var)
   set_fact:
-    # Lire le token depuis le nom non-sensible R_TKN_SECRET
-    github_token: "{{ R_TKN_SECRET }}" 
-    # Le Repo reste en lookup('env')
+    github_token: "{{ lookup('env', 'SECRET_TOKEN') | default('') }}"
     github_repo: "{{ lookup('env', 'GITHUB_REPO') | default('ilyara-aya-elmafhoum/backend') }}"
 
 # ... Le reste du playbook qui utilise {{ github_token }} ne change pas.
