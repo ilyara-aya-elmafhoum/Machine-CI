@@ -1,5 +1,6 @@
 ---
 # Rôle : Installation et configuration du GitHub Runner
+# Avec génération du token directement depuis GitHub
 
 # 1. Créer le groupe ansible-boot
 - name: Créer le groupe ansible-boot
@@ -37,7 +38,7 @@
     group: ansible-boot
   become: yes
 
-# 5. Extraire le runner correctement
+# 5. Extraire le runner
 - name: Extraire le runner
   unarchive:
     src: /opt/github-runner/actions-runner-linux-x64.tar.gz
@@ -63,26 +64,30 @@
     chdir: /opt/github-runner
   become: yes
 
+# 8. Générer le token GitHub Runner directement via l'API
+- name: Générer token GitHub Runner via API
+  uri:
+    url: "https://api.github.com/repos/{{ github_repo }}/actions/runners/registration-token"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ github_pat }}"
+      Accept: "application/vnd.github+json"
+    return_content: yes
+  register: runner_token_response
+  no_log: true   # Empêche l'affichage du token dans les logs
 
-# 8. Récupérer les variables
-- name: Récupérer les variables (Token via extra_var)
+# 9. Extraire le token
+- name: Extraire le token
   set_fact:
-    github_token: "{{ SECRET_TOKEN | default('') }}"
-    github_repo: "{{ GITHUB_REPO | default('ilyara-aya-elmafhoum/backend') }}"
+    github_token: "{{ runner_token_response.json.token }}"
 
-# ... Le reste du playbook qui utilise {{ github_token }} ne change pas.
-
-- name: DEBUG - longueur du token
-  debug:
-    msg: "Token GitHub reçu : {{ github_token | length }} caractères"
-
+# 10. DEBUG - Vérifier que le token est présent
 - name: Vérifier la présence du token
   fail:
-    msg: "Le token GitHub Runner est vide ! Vérifie Semaphore/GitHub Actions."
-  when: github_token | length < 10
+    msg: "Le token GitHub Runner est vide ! Vérifie la variable github_pat."
+  when: github_token is not defined or github_token | length < 10
 
-
-# 9. Configurer le runner
+# 11. Configurer le runner GitHub (config.sh)
 - name: Configurer le runner GitHub (config.sh)
   command: >
     ./config.sh
@@ -95,14 +100,14 @@
   become: yes
   become_user: ansible-boot
 
-# 10. Installer le service GitHub Runner
+# 12. Installer le service GitHub Runner
 - name: Installer le service GitHub Runner
   shell: ./svc.sh install
   args:
     chdir: /opt/github-runner
   become: yes
 
-# 11. Démarrer le service GitHub Runner
+# 13. Démarrer le service GitHub Runner
 - name: Démarrer le runner
   systemd:
     name: "actions.runner.{{ github_repo | regex_replace('/', '-') }}.machine-ci.service"
