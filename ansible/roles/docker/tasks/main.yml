@@ -4,17 +4,10 @@
     update_cache: yes
   become: yes
 
-- name: Installer Docker simple 
+- name: Installer Docker  (docker.io)
   ansible.builtin.apt:
     name: docker.io
     state: present
-  become: yes
-
-- name: Assurer que le service Docker est démarré et activé
-  ansible.builtin.service:
-    name: docker
-    state: started
-    enabled: true
   become: yes
 
 - name: Ajouter l'utilisateur devops-aya au groupe docker
