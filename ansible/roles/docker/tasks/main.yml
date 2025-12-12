@@ -54,9 +54,9 @@
     state: started
     enabled: true
 
-- name: Ajouter l'utilisateur distant au groupe docker (si nécessaire)
+- name: Ajouter l'utilisateur devops-aya au groupe docker
   ansible.builtin.user:
-    name: "{{ ansible_user }}"
+    name: "devops-aya"
     groups: docker
     append: true
-  
+

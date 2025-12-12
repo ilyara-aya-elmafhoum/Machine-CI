@@ -1,0 +1,33 @@
+---
+# 1. Installer le client Swift
+- name: Installer le client OpenStack Swift
+  ansible.builtin.apt:
+    name: python3-swiftclient
+    state: present
+    update_cache: yes
+  become: yes
+
+# 2. Créer un fichier de configuration temporaire pour Swift
+- name: Créer fichier de configuration Swift
+  ansible.builtin.copy:
+    dest: /tmp/swift_config
+    content: |
+      [swift]
+      auth_url = {{ swift_auth_url }}
+      user = {{ swift_credential_id }}
+      key = {{ swift_credential_secret }}
+      region_name = {{ swift_region }}
+      auth_version = 3
+    mode: '0600'
+  no_log: true  # cache les secrets
+
+# 3. Upload du fichier vers le container
+- name: Upload du fichier JAR vers Swift
+  ansible.builtin.command: >
+    swift --config /tmp/swift_config upload {{ swift_container }} {{ swift_file_path }}
+  args:
+    chdir: "{{ playbook_dir }}"
+  environment:
+    OS_APPLICATION_CREDENTIAL_ID: "{{ swift_credential_id }}"
+    OS_APPLICATION_CREDENTIAL_SECRET: "{{ swift_credential_secret }}"
+  become: yes

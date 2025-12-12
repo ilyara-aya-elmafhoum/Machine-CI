@@ -73,8 +73,10 @@
       Authorization: "Bearer {{ github_pat }}"
       Accept: "application/vnd.github+json"
     return_content: yes
+    status_code: 201
   register: runner_token_response
-  no_log: true  # protège le token dans les logs
+  no_log: true
+
 
 # 9. Extraire le token
 - name: Extraire le token
