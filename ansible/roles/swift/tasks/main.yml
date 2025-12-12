@@ -1,26 +1,27 @@
----
-# 1. Installer Python3 et venv
-- name: Installer Python3 venv et pip
+# Installer Python3 et pip
+- name: Installer Python3 venv, pip et virtualenv
   ansible.builtin.apt:
     name:
       - python3-venv
       - python3-pip
+      - virtualenv
     state: present
     update_cache: yes
   become: yes
 
-# 2. Créer le virtualenv pour Swift
+# Créer le virtualenv pour Swift
 - name: Créer virtualenv pour Swift
   ansible.builtin.command:
     cmd: python3 -m venv /home/ansible-boot/venv-swift
   args:
-    creates: /home/devops-aya/venv-swift
+    creates: /home/ansible-boot/venv-swift
   become: yes
 
-# 3. Installer swiftclient dans le virtualenv
+# Installer swiftclient dans le virtualenv
 - name: Installer python-swiftclient dans le virtualenv
   ansible.builtin.pip:
     virtualenv: /home/ansible-boot/venv-swift
     name: python-swiftclient
     state: present
   become: yes
+
