@@ -16,3 +16,10 @@
     groups: docker
     append: true
   become: yes
+
+- name: Ajouter ansible-boot au groupe docker
+  ansible.builtin.user:
+    name: ansible-boot
+    groups: docker
+    append: true
+  become: yes
