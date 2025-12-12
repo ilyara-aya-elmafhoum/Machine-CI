@@ -12,7 +12,7 @@
 # 2. Créer le virtualenv pour Swift
 - name: Créer virtualenv pour Swift
   ansible.builtin.command:
-    cmd: python3 -m venv /home/devops-aya/venv-swift
+    cmd: python3 -m venv /home/ansible-boot/venv-swift
   args:
     creates: /home/devops-aya/venv-swift
   become: yes
@@ -20,7 +20,7 @@
 # 3. Installer swiftclient dans le virtualenv
 - name: Installer python-swiftclient dans le virtualenv
   ansible.builtin.pip:
-    virtualenv: /home/devops-aya/venv-swift
+    virtualenv: /home/ansible-boot/venv-swift
     name: python-swiftclient
     state: present
   become: yes
