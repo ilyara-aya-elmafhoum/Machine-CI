@@ -1,8 +1,26 @@
 ---
-# Installer le client OpenStack Swift
-- name: Installer le client OpenStack Swift
+# 1. Installer Python3 et venv
+- name: Installer Python3 venv et pip
   ansible.builtin.apt:
-    name: python3-swiftclient
+    name:
+      - python3-venv
+      - python3-pip
     state: present
     update_cache: yes
+  become: yes
+
+# 2. Créer le virtualenv pour Swift
+- name: Créer virtualenv pour Swift
+  ansible.builtin.command:
+    cmd: python3 -m venv /home/devops-aya/venv-swift
+  args:
+    creates: /home/devops-aya/venv-swift
+  become: yes
+
+# 3. Installer swiftclient dans le virtualenv
+- name: Installer python-swiftclient dans le virtualenv
+  ansible.builtin.pip:
+    virtualenv: /home/devops-aya/venv-swift
+    name: python-swiftclient
+    state: present
   become: yes

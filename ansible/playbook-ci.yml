@@ -6,6 +6,7 @@
     github_token: "{{ lookup('env', 'GITHUB_TOKEN') }}"   
   roles:
     - docker
+    - swift
     - github-runner
     - java
-    - swift
+    
