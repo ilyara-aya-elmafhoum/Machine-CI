@@ -8,7 +8,7 @@ ACTION=${1:-create}        # create / ansible / destroy
 TEMPLATE_ID=${2:-18}       # Template Semaphore
 
 # Variables globales
-SEMAPHORE_URL="${SEMAPHORE_URL:-http://84.234.24.138:3000}"
+SEMAPHORE_URL="${SEMAPHORE_URL:-https://semaphore.ilyara.com}"
 PROJECT_ID="${PROJECT_ID:-1}"
 TOKEN="${SEMAPHORE_TOKEN:-}"
 GITHUB_REPO="${GITHUB_REPO:-ilyara-aya-elmafhoum/backend}"

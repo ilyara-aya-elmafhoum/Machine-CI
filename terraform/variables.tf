@@ -115,3 +115,8 @@ variable "subnet_id" {
   type        = string
   
 }
+variable "ACTION" {
+  description = "Action à exécuter : create ou destroy"
+  type        = string
+  default     = "create"
+}

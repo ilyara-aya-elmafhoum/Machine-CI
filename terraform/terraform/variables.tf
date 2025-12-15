@@ -122,3 +122,9 @@ variable "job_id" {
   type        = string
   default     = ""
 }
+
+variable "ACTION" {
+  description = "Action à exécuter : create ou destroy"
+  type        = string
+  default     = "create"
+}
