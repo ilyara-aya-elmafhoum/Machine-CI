@@ -5,8 +5,8 @@
     github_repo: "ilyara-aya-elmafhoum/backend"
     github_token: "{{ lookup('env', 'GITHUB_TOKEN') }}"   
   roles:
-    - docker
     - swift
     #- github-runner
     - java
+    - docker
     
