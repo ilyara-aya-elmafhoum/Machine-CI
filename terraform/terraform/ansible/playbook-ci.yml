@@ -1,0 +1,10 @@
+- name: Déployer la machine CI complète
+  hosts: machine-ci
+  become: yes
+  vars:
+    github_repo: "ilyara-aya-elmafhoum/Pipline-CI"
+    github_token: "{{ lookup('env', 'GITHUB_TOKEN') }}"   
+  roles:
+    - docker
+    - sonarqube
+    - github-runner

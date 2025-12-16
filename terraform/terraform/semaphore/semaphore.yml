@@ -1,0 +1,42 @@
+blocks:
+  - name: Terraform Plan & Apply
+    task:
+      secrets:
+        - name: terraform
+
+      jobs:
+        - name: Create control-plane
+          commands:
+            - checkout
+            - cd terraform
+
+            # OpenStack
+            - export OS_AUTH_URL="https://api.pub1.infomaniak.cloud/identity/v3"
+            - export OS_USERNAME="$OS_USERNAME"
+            - export OS_PASSWORD="$OS_PASSWORD"
+            - export OS_PROJECT_NAME="$OS_PROJECT_NAME"
+            - export OS_REGION_NAME="dc3-a"
+            - export OS_USER_DOMAIN_NAME="Default"
+            - export OS_PROJECT_DOMAIN_NAME="Default"
+
+            # Terraform variables
+            - export TF_VAR_ssh_key_name="$ssh_key_name"
+            - export TF_VAR_sysadmin_pub_key="$sysadmin_pub_key"
+            - export TF_VAR_devops_aya_pub_key="$devops_aya_pub_key"
+            - export TF_VAR_terraform_bot_pub_key="$terraform_bot_pub_key"
+            - export TF_VAR_vm_flavor="$vm_flavor"
+            - export TF_VAR_vm_image="$vm_image"
+            - export TF_VAR_floating_ip_pool="$floating_ip_pool"
+            - export TF_VAR_admin_cidr="$admin_cidr"
+            - export TF_VAR_network_name="$network_name"
+            
+
+            # Vérification
+            - echo "VM Image: $vm_image"
+            - echo "Network: $network_name"
+
+            # Terraform
+            - terraform init -input=false
+            - terraform plan -out=tfplan -input=false -detailed-exitcode
+            - terraform destroy -target=openstack_compute_instance_v2.controle_plane -auto-approve
+            ##- terraform apply -auto-approve tfplany

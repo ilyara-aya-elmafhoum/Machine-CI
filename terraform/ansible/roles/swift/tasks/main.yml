@@ -1,0 +1,30 @@
+---
+# roles/swift/tasks/main.yml
+
+# 1. Installer Python3, venv et pip
+- name: Installer Python3, venv et pip
+  ansible.builtin.apt:
+    name:
+      - python3-venv
+      - python3-pip
+    state: present
+    update_cache: yes
+  become: yes
+
+# 2. Créer le virtualenv pour Swift
+- name: Créer le virtualenv pour Swift
+  ansible.builtin.command:
+    cmd: python3 -m venv /home/ansible-boot/venv-swift
+  args:
+    creates: /home/ansible-boot/venv-swift
+  become: yes
+
+# 3. Installer python-swiftclient et python-keystoneclient dans le virtualenv
+- name: Installer swiftclient et keystoneclient dans le virtualenv
+  ansible.builtin.pip:
+    virtualenv: /home/ansible-boot/venv-swift
+    name:
+      - python-swiftclient
+      - python-keystoneclient
+    state: present
+  become: yes

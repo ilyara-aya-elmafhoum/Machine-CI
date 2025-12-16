@@ -1,0 +1,48 @@
+---
+# 1. Installer les dépendances nécessaires
+- name: Installer wget et gnupg
+  ansible.builtin.apt:
+    name:
+      - wget
+      - gnupg
+    state: present
+    update_cache: yes
+  become: yes
+
+# 2. Ajouter la clé GPG Adoptium (avec keyring, pas apt-key)
+- name: Ajouter la clé GPG Adoptium
+  ansible.builtin.shell: |
+    wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor -o /usr/share/keyrings/adoptium.gpg
+  args:
+    creates: /usr/share/keyrings/adoptium.gpg
+  become: yes
+
+# 3. Ajouter le dépôt Adoptium
+- name: Ajouter le dépôt Adoptium
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb {{ ansible_distribution_release }} main"
+    state: present
+  become: yes
+
+# 4. Mettre à jour la cache APT
+- name: Mettre à jour la cache APT
+  ansible.builtin.apt:
+    update_cache: yes
+  become: yes
+
+# 5. Installer Temurin JDK
+- name: Installer Temurin JDK
+  ansible.builtin.apt:
+    name: "{{ java_package }}"
+    state: present
+  become: yes
+
+# 6. Vérifier l'installation de Java
+- name: Vérifier la version de Java
+  ansible.builtin.command: java -version
+  register: java_version_output
+  ignore_errors: yes
+
+- name: Afficher la version de Java
+  ansible.builtin.debug:
+    msg: "{{ java_version_output.stderr_lines }}"

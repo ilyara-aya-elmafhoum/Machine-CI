@@ -1,0 +1,61 @@
+[33m715f097[m[33m ([m[1;36mHEAD[m[33m)[m Update main.yml
+[33mfffa91c[m Update main.yml
+[33mff656aa[m Update main.yml
+[33m8ad8adf[m Update main.yml
+[33m764f0c3[m Update main.yml
+[33mca2ee1b[m Update main.yml
+[33m852d1f3[m Update main.yml
+[33m73dca2f[m Update main.yml
+[33mdc12fc8[m Trigger workflow test
+[33m5f737fc[m Trigger workflow test
+[33m3b7a6b0[m Trigger workflow test
+[33m992a031[m fixer probleme docker
+[33mf0fc09d[m fixer probleme docker
+[33m410dff0[m m
+[33m7cd1e9d[m m
+[33mad5ca07[m m
+[33mcfac5de[m Amelioration
+[33me080421[m correction
+[33ma3e2d27[m correction
+[33m7317786[m correction
+[33m943730a[m correction
+[33m09a94df[m correction
+[33m0e4c436[m correction
+[33m117ab25[m correction
+[33md2db876[m modification
+[33m1ed7a1a[m modification
+[33m62d3c4d[m modification
+[33m382a2b0[m modification
+[33mb46e309[m modification
+[33ma588d6d[m ansible/docker
+[33m650adf2[m ansible/docker
+[33m58836ff[m ansible/docker
+[33m3cc70af[m ansible/docker
+[33mde0b621[m ansible/docker
+[33m07ef01b[m ansible/docker
+[33m11cb2a9[m ansible/docker
+[33m9981974[m ansible/docker
+[33m1feb2ab[m ansible/docker
+[33mfa1b52b[m ansible/docker
+[33m1d20944[m ansible/docker
+[33ma9fcdeb[m ansible/docker
+[33m3e533e8[m ansible/docker
+[33m30ffbed[m ansible/docker
+[33macfef59[m ansible/docker
+[33m5c6fabe[m ansible/docker
+[33mdb2593b[m ansible/docker
+[33m95dfb81[m ansible/docker
+[33m0abd7f0[m fix: update de  fixed_ip a fixed_ip_v4 dans network block
+[33m924b08b[m fix: update de  fixed_ip a fixed_ip_v4 dans network block
+[33m5ea3c27[m fix: update de  fixed_ip a fixed_ip_v4 dans network block
+[33m832717c[m fix: update de  fixed_ip a fixed_ip_v4 dans network block
+[33m959cc3b[m fix: update de  fixed_ip a fixed_ip_v4 dans network block
+[33m05f0050[m fix: update de  fixed_ip a fixed_ip_v4 dans network block
+[33md58e615[m ajout adresse privee
+[33m6d4853f[m Modification fichier ansible
+[33mf7c28ce[m Ajout des fichiers Ansible
+[33m7804132[m Modifiction des fichiers Terraform
+[33m9b82588[m Modifiction des fichiers Terraform
+[33mf990fbc[m Modifiction des fichiers Terraform
+[33me73f063[m Ajout des fichiers Terraform
+[33m69ad0b7[m Initial commit

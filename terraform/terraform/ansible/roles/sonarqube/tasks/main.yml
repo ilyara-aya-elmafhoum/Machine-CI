@@ -1,0 +1,33 @@
+- name: Créer dossier SonarQube
+  file:
+    path: /opt/sonarqube
+    state: directory
+    mode: '0755'
+
+- name: Créer docker-compose.yml pour SonarQube
+  copy:
+    dest: /opt/sonarqube/docker-compose.yml
+    content: |
+      version: "3.8"
+      services:
+        sonarqube:
+          image: sonarqube:community
+          container_name: sonarqube
+          restart: always
+          ports:
+            - "9000:9000"
+          environment:
+            - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+          volumes:
+            - sonarqube_data:/opt/sonarqube/data
+            - sonarqube_logs:/opt/sonarqube/logs
+      volumes:
+        sonarqube_data:
+        sonarqube_logs:
+
+- name: Lancer SonarQube
+  shell: docker compose -f /opt/sonarqube/docker-compose.yml up -d
+  args:
+    chdir: /opt/sonarqube
+  become: yes
+

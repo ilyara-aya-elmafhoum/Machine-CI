@@ -104,6 +104,7 @@ variable "subnet_id" {
   description = "ID du sous-réseau privé utilisé par la machine CI"
   type        = string
 }
+<<<<<<< HEAD
 
 variable "repo_url" {
   description = "URL du dépôt GitHub"
@@ -123,8 +124,11 @@ variable "job_id" {
   default     = ""
 }
 
+
+=======
 variable "ACTION" {
   description = "Action à exécuter : create ou destroy"
   type        = string
   default     = "create"
 }
+>>>>>>> origin/main

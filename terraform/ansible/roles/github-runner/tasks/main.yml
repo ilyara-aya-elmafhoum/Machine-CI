@@ -1,5 +1,6 @@
 ---
 # Rôle : Installation et configuration du GitHub Runner
+# Génération automatique du token GitHub via API
 
 # 1. Créer le groupe ansible-boot
 - name: Créer le groupe ansible-boot
@@ -27,7 +28,7 @@
     group: ansible-boot
   become: yes
 
-# 4. Télécharger GitHub Runner
+# 4. Télécharger le runner
 - name: Télécharger GitHub Runner
   get_url:
     url: "https://github.com/actions/runner/releases/download/v2.329.0/actions-runner-linux-x64-2.329.0.tar.gz"
@@ -37,7 +38,11 @@
     group: ansible-boot
   become: yes
 
+<<<<<<< HEAD
 # 5. Extraire le runner (avec svc.sh à la racine)
+=======
+# 5. Extraire le runner
+>>>>>>> origin/main
 - name: Extraire le runner
   unarchive:
     src: /opt/github-runner/actions-runner-linux-x64.tar.gz
@@ -45,7 +50,11 @@
     remote_src: yes
     owner: ansible-boot
     group: ansible-boot
+<<<<<<< HEAD
     extra_opts: [--strip-components=1]  # <-- IMPORTANT
+=======
+    extra_opts: [--strip-components=1]
+>>>>>>> origin/main
   become: yes
 
 # 6. Installer libicu pour Dotnet
@@ -62,8 +71,8 @@
   args:
     chdir: /opt/github-runner
   become: yes
-  become_user: root
 
+<<<<<<< HEAD
 # 8. Configurer le runner GitHub
 - name: Récupérer les variables d'environnement
   set_fact:
@@ -73,20 +82,54 @@
 - name: Afficher la longueur du token lu par Ansible
   debug:
     msg: "DEBUG - github_token length (Ansible): {{ github_token | length }}"
+=======
+# 8. Générer le token GitHub Runner via API
+- name: Générer token GitHub Runner via API
+  uri:
+    url: "https://api.github.com/repos/{{ github_repo }}/actions/runners/registration-token"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ github_pat }}"
+      Accept: "application/vnd.github+json"
+    return_content: yes
+    status_code: 201
+  register: runner_token_response
+  no_log: true
 
+
+# 9. Extraire le token
+- name: Extraire le token
+  set_fact:
+    github_token: "{{ runner_token_response.json.token }}"
+>>>>>>> origin/main
+
+# 10. Vérifier que le token est présent
 - name: Vérifier la présence du token
   fail:
-    msg: "Le token GitHub Runner (GITHUB_RUNNER_TOKEN) est vide. Vérifie que Semaphore ou GitHub Actions l’envoie correctement."
-  when: github_token | length == 0
+    msg: "Le token GitHub Runner est vide ! Vérifie la variable github_pat."
+  when: github_token is not defined or github_token | length < 10
 
-# 9. Installer le service GitHub Runner
+# 11. Configurer le runner GitHub
+- name: Configurer le runner GitHub (config.sh)
+  command: >
+    ./config.sh
+    --url https://github.com/{{ github_repo }}
+    --token {{ github_token }}
+    --unattended
+    --replace
+  args:
+    chdir: /opt/github-runner
+  become: yes
+  become_user: ansible-boot
+
+# 12. Installer le service GitHub Runner
 - name: Installer le service GitHub Runner
   shell: ./svc.sh install
   args:
     chdir: /opt/github-runner
   become: yes
 
-# 10. Démarrer le service GitHub Runner
+# 13. Démarrer le service GitHub Runner
 - name: Démarrer le runner
   systemd:
     name: "actions.runner.{{ github_repo | regex_replace('/', '-') }}.machine-ci.service"
