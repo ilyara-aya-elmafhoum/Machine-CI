@@ -81,6 +81,10 @@ resource "openstack_networking_port_v2" "ci_port" {
   name       = "ci-port"
   network_id = var.network_id
 
+  security_group_ids = [
+    openstack_networking_secgroup_v2.ci_sg.id
+  ]
+
   fixed_ip {
     subnet_id  = var.subnet_id
     ip_address = var.machine_ci_private_ip
