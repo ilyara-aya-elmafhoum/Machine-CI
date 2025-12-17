@@ -116,3 +116,12 @@ variable "subnet_id" {
   
 }
 
+variable "TF_ACTION" {
+  type    = string
+  default = "apply"
+}
+
+variable "FORCE_DESTROY" {
+  type    = bool
+  default = false
+}
