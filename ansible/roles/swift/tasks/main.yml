@@ -8,7 +8,6 @@
       - python3-venv
       - python3-pip
     state: present
-    update_cache: yes
   become: yes
 
 # 2. Créer le virtualenv pour Swift

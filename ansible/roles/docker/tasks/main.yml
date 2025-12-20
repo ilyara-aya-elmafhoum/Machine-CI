@@ -1,9 +1,4 @@
 ---
-- name: Mettre à jour la liste des paquets
-  ansible.builtin.apt:
-    update_cache: yes
-  become: yes
-
 - name: Installer Docker  (docker.io)
   ansible.builtin.apt:
     name: docker.io

@@ -17,53 +17,6 @@ provider "openstack" {
   region           = var.region
 }
 
-# Security group CI
-resource "openstack_networking_secgroup_v2" "ci_sg" {
-  name        = "machine-ci-sg"
-  description = "Sécurité pour la machine CI"
-}
-
-# Rule SSH
-resource "openstack_networking_secgroup_rule_v2" "allow_ssh" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 22
-  port_range_max    = 22
-  remote_ip_prefix  = var.admin_cidr
-  security_group_id = openstack_networking_secgroup_v2.ci_sg.id
-}
-
-# Rule HTTP
-resource "openstack_networking_secgroup_rule_v2" "allow_http" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 80
-  port_range_max    = 80
-  security_group_id = openstack_networking_secgroup_v2.ci_sg.id
-}
-
-# Rule HTTPS
-resource "openstack_networking_secgroup_rule_v2" "allow_https" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 443
-  port_range_max    = 443
-  security_group_id = openstack_networking_secgroup_v2.ci_sg.id
-}
-
-# Rule SonarQube
-resource "openstack_networking_secgroup_rule_v2" "allow_sonarqube" {
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  port_range_min    = 9000
-  port_range_max    = 9000
-  security_group_id = openstack_networking_secgroup_v2.ci_sg.id
-}
-
 # Cloud-init
 data "template_file" "cloudinit" {
   template = file("${path.module}/cloudinit.tpl")
@@ -81,9 +34,8 @@ resource "openstack_networking_port_v2" "ci_port" {
   name       = "ci-port"
   network_id = var.network_id
 
-  security_group_ids = [
-    openstack_networking_secgroup_v2.ci_sg.id
-  ]
+  # Attacher le SG 
+  security_group_ids = ["039e8461-2e3a-4518-9288-f689b7a2d33c"] 
 
   fixed_ip {
     subnet_id  = var.subnet_id
@@ -102,14 +54,13 @@ resource "openstack_compute_instance_v2" "machine_ci" {
     port = openstack_networking_port_v2.ci_port.id
   }
 
-  security_groups = [
-    openstack_networking_secgroup_v2.ci_sg.name
-  ]
+  # Attacher le SG manuel
+  security_groups = ["machine-ci-sg"]
 
   user_data = data.template_file.cloudinit.rendered
 }
 
-# Floating IP
+# Floating IP dynamique
 resource "openstack_networking_floatingip_v2" "ci_fip" {
   pool    = var.floating_ip_pool
   port_id = openstack_networking_port_v2.ci_port.id
