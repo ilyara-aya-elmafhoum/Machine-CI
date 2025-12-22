@@ -1,78 +1,118 @@
 ---
-# Installer outils nécessaires
-- name: Installer curl et dépendances
-  apt:
-    name:
-      - curl
-      - ca-certificates
-      - tar
-      - libicu-dev
-    state: present
-    update_cache: yes
+# Rôle : Installation et configuration du GitHub Runner
+# Génération automatique du token GitHub via API
 
-# Créer l'utilisateur runner
-- name: Créer utilisateur ansible-boot
+# 1. Créer le groupe ansible-boot
+- name: Créer le groupe ansible-boot
+  group:
+    name: ansible-boot
+    state: present
+  become: yes
+
+# 2. Créer l'utilisateur ansible-boot
+- name: Créer l'utilisateur ansible-boot
   user:
     name: ansible-boot
     shell: /bin/bash
     create_home: yes
+    group: ansible-boot
+  become: yes
 
-# Créer dossier runner
-- name: Créer dossier runner
+# 3. Créer le dossier du runner
+- name: Créer le dossier GitHub Runner
   file:
-    path: /opt/actions-runner
+    path: /opt/github-runner
     state: directory
+    mode: '0755'
     owner: ansible-boot
     group: ansible-boot
-    mode: '0755'
+  become: yes
 
-# Télécharger GitHub Runner (SIMPLE)
+# 4. Télécharger le runner
 - name: Télécharger GitHub Runner
-  shell: |
-    cd /opt/actions-runner
-    curl -L -o runner.tar.gz https://github.com/actions/runner/releases/latest/download/actions-runner-linux-x64.tar.gz
-  args:
-    creates: /opt/actions-runner/runner.tar.gz
+  get_url:
+    url: "https://github.com/actions/runner/releases/download/v2.329.0/actions-runner-linux-x64-2.329.0.tar.gz"
+    dest: /opt/github-runner/actions-runner-linux-x64.tar.gz
+    mode: '0644'
+    owner: ansible-boot
+    group: ansible-boot
+  become: yes
 
-# Extraire runner
-- name: Extraire GitHub Runner
-  shell: |
-    cd /opt/actions-runner
-    tar xzf runner.tar.gz
-  args:
-    creates: /opt/actions-runner/config.sh
+# 5. Extraire le runner
+- name: Extraire le runner
+  unarchive:
+    src: /opt/github-runner/actions-runner-linux-x64.tar.gz
+    dest: /opt/github-runner
+    remote_src: yes
+    owner: ansible-boot
+    group: ansible-boot
+    extra_opts: [--strip-components=1]
+  become: yes
 
-# Générer token runner GitHub
-- name: Générer token GitHub Runner
+# 6. Installer libicu pour Dotnet
+- name: Installer libicu pour Dotnet
+  apt:
+    name: libicu-dev
+    state: present
+    update_cache: yes
+  become: yes
+
+# 7. Installer les dépendances Dotnet
+- name: Installer les dépendances Dotnet
+  command: ./bin/installdependencies.sh
+  args:
+    chdir: /opt/github-runner
+  become: yes
+
+# 8. Générer le token GitHub Runner via API
+- name: Générer token GitHub Runner via API
   uri:
-    url: "https://api.github.com/repos/{{ lookup('env','GITHUB_REPO') }}/actions/runners/registration-token"
+    url: "https://api.github.com/repos/{{ github_repo }}/actions/runners/registration-token"
     method: POST
     headers:
-      Authorization: "Bearer {{ lookup('env','GITHUB_PAT') }}"
+      Authorization: "Bearer {{ github_pat }}"
       Accept: "application/vnd.github+json"
+    return_content: yes
     status_code: 201
-  register: runner_token
+  register: runner_token_response
   no_log: true
 
-# Configurer runner
-- name: Configurer GitHub Runner
-  shell: |
-    cd /opt/actions-runner
-    ./config.sh \
-      --url https://github.com/{{ lookup('env','GITHUB_REPO') }} \
-      --token {{ runner_token.json.token }} \
-      --unattended \
-      --replace
+
+# 9. Extraire le token
+- name: Extraire le token
+  set_fact:
+    github_token: "{{ runner_token_response.json.token }}"
+
+# 10. Vérifier que le token est présent
+- name: Vérifier la présence du token
+  fail:
+    msg: "Le token GitHub Runner est vide ! Vérifie la variable github_pat."
+  when: github_token is not defined or github_token | length < 10
+
+# 11. Configurer le runner GitHub
+- name: Configurer le runner GitHub (config.sh)
+  command: >
+    ./config.sh
+    --url https://github.com/{{ github_repo }}
+    --token {{ github_token }}
+    --unattended
+    --replace
+  args:
+    chdir: /opt/github-runner
+  become: yes
   become_user: ansible-boot
 
-# Installer service
-- name: Installer service runner
-  shell: |
-    cd /opt/actions-runner
-    ./svc.sh install
+# 12. Installer le service GitHub Runner
+- name: Installer le service GitHub Runner
+  shell: ./svc.sh install
+  args:
+    chdir: /opt/github-runner
+  become: yes
 
-# Démarrer service
-- name: Démarrer runner
-  shell: |
-    cd /opt/actions-runner
-    ./svc.sh start
+# 13. Démarrer le service GitHub Runner
+- name: Démarrer le runner
+  systemd:
+    name: "actions.runner.{{ github_repo | regex_replace('/', '-') }}.machine-ci.service"
+    state: started
+    enabled: yes
+  become: yes
