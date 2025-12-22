@@ -1,9 +1,7 @@
 - name: Déployer la machine CI complète
   hosts: machine-ci
   become: yes
-  vars:
-    github_repo: "ilyara-aya-elmafhoum/backend"
-    github_token: "{{ lookup('env', 'GITHUB_TOKEN') }}"   
+   
   roles:
     - common
     - java

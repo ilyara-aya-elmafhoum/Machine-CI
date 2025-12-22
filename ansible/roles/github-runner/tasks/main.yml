@@ -1,6 +1,6 @@
 ---
 # Rôle : Installation et configuration du GitHub Runner
-# Génération automatique du token GitHub via API
+# Runner self-hosted éphémère avec génération automatique du token via API GitHub
 
 # 1. Créer le groupe ansible-boot
 - name: Créer le groupe ansible-boot
@@ -18,7 +18,7 @@
     group: ansible-boot
   become: yes
 
-# 3. Créer le dossier du runner
+# 3. Créer le dossier GitHub Runner
 - name: Créer le dossier GitHub Runner
   file:
     path: /opt/github-runner
@@ -28,18 +28,37 @@
     group: ansible-boot
   become: yes
 
-# 4. Télécharger le runner
+# 3.5 Installer curl et certificats TLS (obligatoire pour GitHub)
+- name: Installer curl et certificats TLS
+  apt:
+    name:
+      - curl
+      - ca-certificates
+    state: present
+    update_cache: yes
+  become: yes
+
+# 4. Télécharger le runner GitHub (curl robuste)
 - name: Télécharger GitHub Runner
-  get_url:
-    url: "https://github.com/actions/runner/releases/download/v2.329.0/actions-runner-linux-x64-2.329.0.tar.gz"
-    dest: /opt/github-runner/actions-runner-linux-x64.tar.gz
-    mode: '0644'
+  shell: |
+    curl -fL --retry 5 --retry-delay 5 \
+      https://github.com/actions/runner/releases/download/v2.329.0/actions-runner-linux-x64-2.329.0.tar.gz \
+      -o /opt/github-runner/actions-runner-linux-x64.tar.gz
+  args:
+    creates: /opt/github-runner/actions-runner-linux-x64.tar.gz
+  become: yes
+
+# 4.1 Fixer les permissions de l'archive
+- name: Fixer les permissions de l'archive runner
+  file:
+    path: /opt/github-runner/actions-runner-linux-x64.tar.gz
     owner: ansible-boot
     group: ansible-boot
+    mode: '0644'
   become: yes
 
 # 5. Extraire le runner
-- name: Extraire le runner
+- name: Extraire le runner GitHub
   unarchive:
     src: /opt/github-runner/actions-runner-linux-x64.tar.gz
     dest: /opt/github-runner
@@ -49,7 +68,7 @@
     extra_opts: [--strip-components=1]
   become: yes
 
-# 6. Installer libicu pour Dotnet
+# 6. Installer libicu (dépendance .NET du runner)
 - name: Installer libicu pour Dotnet
   apt:
     name: libicu-dev
@@ -57,15 +76,15 @@
     update_cache: yes
   become: yes
 
-# 7. Installer les dépendances Dotnet
-- name: Installer les dépendances Dotnet
+# 7. Installer les dépendances du runner
+- name: Installer les dépendances du GitHub Runner
   command: ./bin/installdependencies.sh
   args:
     chdir: /opt/github-runner
   become: yes
 
 # 8. Générer le token GitHub Runner via API
-- name: Générer token GitHub Runner via API
+- name: Générer le token GitHub Runner via API
   uri:
     url: "https://api.github.com/repos/{{ github_repo }}/actions/runners/registration-token"
     method: POST
@@ -77,20 +96,19 @@
   register: runner_token_response
   no_log: true
 
-
 # 9. Extraire le token
-- name: Extraire le token
+- name: Extraire le token GitHub Runner
   set_fact:
     github_token: "{{ runner_token_response.json.token }}"
 
-# 10. Vérifier que le token est présent
-- name: Vérifier la présence du token
+# 10. Vérifier la présence du token
+- name: Vérifier la présence du token GitHub Runner
   fail:
-    msg: "Le token GitHub Runner est vide ! Vérifie la variable github_pat."
+    msg: "Le token GitHub Runner est vide ou invalide. Vérifie github_pat."
   when: github_token is not defined or github_token | length < 10
 
 # 11. Configurer le runner GitHub
-- name: Configurer le runner GitHub (config.sh)
+- name: Configurer le runner GitHub
   command: >
     ./config.sh
     --url https://github.com/{{ github_repo }}
@@ -102,17 +120,18 @@
   become: yes
   become_user: ansible-boot
 
-# 12. Installer le service GitHub Runner
+# 12. Installer le service systemd du runner
 - name: Installer le service GitHub Runner
   shell: ./svc.sh install
   args:
     chdir: /opt/github-runner
   become: yes
 
-# 13. Démarrer le service GitHub Runner
-- name: Démarrer le runner
+# 13. Démarrer et activer le service GitHub Runner
+- name: Démarrer le service GitHub Runner
   systemd:
     name: "actions.runner.{{ github_repo | regex_replace('/', '-') }}.machine-ci.service"
     state: started
     enabled: yes
   become: yes
+
