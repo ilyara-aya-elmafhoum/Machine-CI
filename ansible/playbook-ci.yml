@@ -1,3 +1,19 @@
+---
+- name: Configurer le Runner Éphémère
+  hosts: all
+  gather_facts: no  # Important : ne pas collecter les facts tant que SSH n'est pas prêt
+  
+  tasks:
+    - name: "Attente en boucle du serveur SSH (port 22)"
+      ansible.builtin.wait_for_connection:
+        delay: 5         # Attendre 5 secondes avant de commencer
+        timeout: 300     # Attendre au maximum 5 minutes (300 secondes)
+        connect_timeout: 10
+
+    - name: "Collecter les facts maintenant que SSH est prêt"
+      ansible.builtin.setup:
+
+
 - name: Déployer la machine CI complète
   hosts: machine-ci
   become: yes
